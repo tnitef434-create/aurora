@@ -167,7 +167,7 @@ const medalFor = (t, par) => t <= par ? 'gold' : t <= par * 1.5 ? 'silver' : 'br
 
 /* ================================================================== GAME */
 export async function createGame(opts) {
-  const { container, audio, getSettings, onPause, onLevelComplete, onFinish, onQuit, getRelics, onRelic, getProgress, onAttempt, onDeath } = opts;
+  const { container, audio, getSettings, onPause, onLevelComplete, onFinish, onQuit, getRelics, onRelic, getProgress, onAttempt, onDeath, onUseRelic } = opts;
   const A = audio.A;
   let S = getSettings();
   const T = k => (STR[S.language] || STR.English)[k] || STR.English[k];
@@ -297,7 +297,12 @@ export async function createGame(opts) {
   hud.className = 'g-hud';
   hud.innerHTML = `
     <div class="g-hit"></div>
-    <div class="g-tl"><div class="g-lvl"></div><div class="g-hearts"></div><div class="g-row"><div class="g-shards"><i></i><i></i><i></i></div><div class="g-relics"></div></div></div>
+    <div class="g-tl"><div class="g-lvl"></div><div class="g-hearts"></div><div class="g-row"><div class="g-shards"><i></i><i></i><i></i></div><div class="g-relics"></div></div>
+      <div class="g-dash"><span class="gd-ic"><svg viewBox="0 0 24 24"><path d="M13 4l7 8-7 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8h7M5 12h9M3 16h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><div class="gd-bar"><i></i></div><b class="gd-key"></b></div></div>
+    <div class="g-notice"><div class="gn-card"><div class="gn-ic"><svg viewBox="0 0 24 24"><path d="M13 4l7 8-7 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8h7M5 12h9M3 16h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></div><small>THIS MAP HAS</small><h2>Dash enabled</h2>
+      <p>Press <b class="gn-key"></b> to dash forward. Each dash uses stamina and needs 1 second to recharge. Dash through gaps, past insects and out of trouble.</p>
+      <button class="g-btn gn-ok"></button></div></div>
+    <div class="g-count"></div>
     <div class="g-tr"><div class="g-timer">0:00.0</div><div class="g-par"></div><div class="g-fps"></div></div>
     <div class="g-msg"></div>
     <div class="g-relicmsg"><small></small><b></b></div>
@@ -308,13 +313,13 @@ export async function createGame(opts) {
     <div class="g-lock"><span></span></div>
     <div class="g-complete"><div class="g-medal"></div><small></small><h1></h1><div class="g-stats"></div><div class="g-btns"><button class="g-btn g-btn2" data-a="menu"></button><button class="g-btn" data-a="next"></button></div></div>
     <div class="g-ov"><div class="ov-card">
-      <div class="ov-head"><div class="ov-tabs"><i class="ov-ind"></i><button data-t="0">Records</button><button data-t="1">Collection</button></div>
+      <div class="ov-head"><div class="ov-tabs"><i class="ov-ind"></i><button data-t="0">Records</button><button data-t="1">Collection</button><button data-t="2">Powers</button></div>
       <div class="ov-keys"></div></div>
       <div class="ov-body"></div></div></div>
     <div class="g-fade"></div>`;
   container.appendChild(hud);
   const $h = s => hud.querySelector(s);
-  const H = { lvl: $h('.g-lvl'), hearts: $h('.g-hearts'), shards: [...hud.querySelectorAll('.g-shards i')], relics: $h('.g-relics'), timer: $h('.g-timer'), par: $h('.g-par'), fps: $h('.g-fps'),
+  const H = { dash: $h('.g-dash'), dashFill: $h('.gd-bar i'), dashKey: $h('.gd-key'), notice: $h('.g-notice'), count: $h('.g-count'), lvl: $h('.g-lvl'), hearts: $h('.g-hearts'), shards: [...hud.querySelectorAll('.g-shards i')], relics: $h('.g-relics'), timer: $h('.g-timer'), par: $h('.g-par'), fps: $h('.g-fps'),
     msg: $h('.g-msg'), relicMsg: $h('.g-relicmsg'), prompt: $h('.g-prompt'), map: $h('.g-map'), hints: $h('.g-hints'), title: $h('.g-title'), lock: $h('.g-lock'),
     complete: $h('.g-complete'), fade: $h('.g-fade'), hit: $h('.g-hit') };
   const mapCtx = H.map.getContext('2d');
@@ -324,8 +329,8 @@ export async function createGame(opts) {
   function renderHints() {
     const p = showPad();
     const k = p
-      ? [['L', T('move')], ['R', T('look')], ['✕', T('jump')], ['R2', T('sprint')], ['Touchpad', 'Records'], ['☰', T('pause')]]
-      : [['WASD', T('move')], ['Mouse', T('look')], ['Space', T('jump')], ['Shift', T('sprint')], ['Tab', 'Records'], ['Esc', T('pause')]];
+      ? [['L', T('move')], ['R', T('look')], ['✕', T('jump')], ['R2', T('sprint')], ...(L && L.def.dash ? [['○', 'Dash']] : []), ['Touchpad', 'Records'], ['☰', T('pause')]]
+      : [['WASD', T('move')], ['Mouse', T('look')], ['Space', T('jump')], ['Shift', T('sprint')], ...(L && L.def.dash ? [['F', 'Dash']] : []), ['Tab', 'Records'], ['Esc', T('pause')]];
     H.hints.innerHTML = k.map(([a, b]) => `<span><b>${a}</b>${b}</span>`).join('');
   }
 
@@ -407,6 +412,51 @@ export async function createGame(opts) {
     L = null;
   }
 
+  // relics hide in a different spot every run: dead ends and quiet corners you can actually reach
+  function pickRelicSpots() {
+    const H = L.map.length, count = L.map.join('').split('H').length - 1;
+    let sr = 0, sc = 0;
+    L.map.forEach((row, r) => { const c = row.indexOf('S'); if (c >= 0) { sr = r; sc = c; } });
+    const dist = pathField(sr, sc), cand = [];
+    for (const [k, d] of dist) {
+      const r = Math.floor(k / 1000), c = k % 1000, ch = cellCh(r, c);
+      if (!'.H'.includes(ch) || d < 6) continue;
+      const open = [[0, 1], [0, -1], [1, 0], [-1, 0]].filter(([dr, dc]) => { const x = cellCh(r + dr, c + dc); return x !== '#' && x !== ' '; }).length;
+      cand.push({ r, c, w: (open === 1 ? 5 : 1) * (1 + d / 20) });
+    }
+    const out = new Set(), taken = [];
+    for (let n = 0; n < count && cand.length; n++) {
+      let pick = null;
+      for (let tries = 0; tries < 60 && !pick; tries++) {
+        let x = Math.random() * cand.reduce((a, o) => a + o.w, 0);
+        const o = cand.find(q => (x -= q.w) <= 0) || cand[0];
+        if (taken.every(t => Math.abs(t.r - o.r) + Math.abs(t.c - o.c) >= 6)) pick = o;
+      }
+      pick = pick || cand[Math.floor(Math.random() * cand.length)];
+      taken.push(pick); out.add(pick.r * 1000 + pick.c); cand.splice(cand.indexOf(pick), 1);
+    }
+    return out;
+  }
+  // walking distances from a cell (steps, single-gap jumps and bounce pads count as moves)
+  function pathField(r0, c0) {
+    const walk = (r, c) => { const x = cellCh(r, c); return x !== '#' && x !== ' ' && x !== '~' && x !== 'M'; };
+    const dist = new Map([[r0 * 1000 + c0, 0]]), q = [[r0, c0]], prev = new Map();
+    while (q.length) {
+      const [r, c] = q.shift(), d = dist.get(r * 1000 + c);
+      for (const [dr, dc] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+        const steps = [[r + dr, c + dc]];
+        if (cellCh(r + dr, c + dc) === ' ') steps.push([r + 2 * dr, c + 2 * dc]);
+        if (cellCh(r, c) === 'B') for (let k = 3; k <= 4; k++) steps.push([r + k * dr, c + k * dc]);
+        for (const [nr, nc] of steps) {
+          const k = nr * 1000 + nc;
+          if (walk(nr, nc) && !dist.has(k)) { dist.set(k, d + 1); prev.set(k, r * 1000 + c); q.push([nr, nc]); }
+        }
+      }
+    }
+    dist.prev = prev;
+    return dist;
+  }
+
   function buildLevel(i) {
     disposeLevel();
     levelIndex = i;
@@ -423,6 +473,7 @@ export async function createGame(opts) {
     const treeItems = [[], [], []];
     const tiles = [[], [], []], crystals = [[], [], []], flora = [[], []];
     let relicIdx = 0;
+    const relicSpots = pickRelicSpots();
     for (let r = 0; r < Hh; r++) for (let c = 0; c < W; c++) {
       const ch = cellCh(r, c), p = cellPos(r, c);
       if (FLOORCH.includes(ch)) tiles[Math.floor(rnd() * 3)].push(M4(p.x, 0, p.z, Math.floor(rnd() * 4) * Math.PI / 2));
@@ -451,7 +502,7 @@ export async function createGame(opts) {
         const light = new THREE.PointLight(0xffc35a, 8, 10, 2); light.position.y = .3; o.add(light);
         L.group.add(o); L.shards.push({ obj: o, home: p.clone(), taken: false, r, c });
       }
-      if (ch === 'H') {
+      if (relicSpots.has(r * 1000 + c)) {
         const idx = relicIdx++, had = !!saved[idx];
         const gIdx = def.relicIds ? def.relicIds[idx] : Math.min(i * 2 + idx, 11);
         const o = cloneModel('relic_' + gIdx, had ? { '*': 'RelicGhost' } : {});
@@ -501,7 +552,8 @@ export async function createGame(opts) {
         let eye = null;
         o.traverse(c => { if (c.isMesh && c.material.name === 'InsectEye') { if (!eye) eye = c.material.clone(); c.material = eye; } });
         const k = L.insects.length;
-        L.insects.push({ obj: o, eye, wingL: o.getObjectByName('WingL'), wingR: o.getObjectByName('WingR'),
+        L.insects.push({ obj: o, eye, wingL: o.getObjectByName('WingL'), wingR: o.getObjectByName('WingR'), wingL2: o.getObjectByName('WingL2'), wingR2: o.getObjectByName('WingR2'),
+          abd: o.getObjectByName('Abdomen'), legsL: o.getObjectByName('LegsL'), legsR: o.getObjectByName('LegsR'), bank: 0,
           pos: p.clone().setY(1.3), home: [r, c], cell: [r, c], next: [r, c], prev: null, state: 'wander', t: 0, seen: 0, path: 0,
           dir: new THREE.Vector3(0, 0, 1), heading: 0, speed: (2.4 + (k % 3) * .35) * (def.hazard || 1), sense: 9 + (k % 2) * 2.5, seed: k * 1.7 + r * .3 + c * .7, buzz: 0 });
       }
@@ -660,7 +712,7 @@ export async function createGame(opts) {
 
   /* ---------- input ---------- */
   const keys = new Set();
-  let jumpPressed = false, interactPressed = false, sprintPressed = false, locked = false, suppressUnlockPause = false;
+  let jumpPressed = false, interactPressed = false, sprintPressed = false, dashPressed = false, locked = false, suppressUnlockPause = false;
   const onKey = e => {
     if (!running) return;
     if (e.type === 'keydown' && e.defaultPrevented) return;
@@ -673,11 +725,20 @@ export async function createGame(opts) {
         if (['Escape', 'KeyQ', 'Backspace'].includes(k)) { e.preventDefault(); quitFromComplete(); }
         return;
       }
+      if (state === 'notice' && !e.repeat) {
+        if (['Enter', 'Space', 'KeyE', 'KeyF'].includes(k)) { e.preventDefault(); ackNotice(); }
+        else if (k === 'Escape' || k === 'KeyP') { e.preventDefault(); pause(); }
+        return;
+      }
       if (ov.open) {
         e.preventDefault();
         if (k === 'Tab' || k === 'Escape' || k === 'Backspace') closeOverlay();
-        else if (k === 'ArrowRight' || k === 'KeyE' || k === 'Digit2') setOvTab(1);
-        else if (k === 'ArrowLeft' || k === 'KeyQ' || k === 'Digit1') setOvTab(0);
+        else if (k === 'ArrowRight' || k === 'KeyE') setOvTab(Math.min(ov.tab + 1, 2));
+        else if (k === 'ArrowLeft' || k === 'KeyQ') setOvTab(Math.max(ov.tab - 1, 0));
+        else if (k.startsWith('Digit') && +k[5] >= 1 && +k[5] <= 3) setOvTab(+k[5] - 1);
+        else if (ov.tab === 2 && (k === 'ArrowDown' || k === 'KeyS')) movePower(1);
+        else if (ov.tab === 2 && (k === 'ArrowUp' || k === 'KeyW')) movePower(-1);
+        else if (ov.tab === 2 && (k === 'Enter' || k === 'Space')) usePower();
         return;
       }
       if (k === 'Tab' && state === 'playing' && !paused && !e.repeat) { e.preventDefault(); openOverlay(); return; }
@@ -685,6 +746,7 @@ export async function createGame(opts) {
       if (paused) return;
       if (k === 'Space' && !e.repeat) jumpPressed = true;
       if (k === 'KeyE' && !e.repeat) interactPressed = true;
+      if ((k === 'KeyF' || k === 'KeyO') && !e.repeat) dashPressed = true;
       if ((k === 'ShiftLeft' || k === 'ShiftRight') && !e.repeat) sprintPressed = true;
       if (k === 'KeyR' && !e.repeat && state === 'playing') respawn('manual');
       keys.add(k);
@@ -694,6 +756,7 @@ export async function createGame(opts) {
   addEventListener('keydown', onKey); addEventListener('keyup', onKey);
   renderer.domElement.addEventListener('click', () => { if (running && !paused && state === 'playing') requestLock(); });
   H.lock.addEventListener('click', () => requestLock());
+  H.notice.querySelector('.gn-ok').addEventListener('click', () => ackNotice());
   H.complete.querySelector('[data-a="next"]').addEventListener('click', () => continueAfterComplete());
   H.complete.querySelector('[data-a="next"]').addEventListener('pointerenter', () => { if (state === 'complete') setCFocus(1); });
   H.complete.querySelector('[data-a="menu"]').addEventListener('pointerenter', () => { if (state === 'complete') setCFocus(0); });
@@ -751,9 +814,20 @@ export async function createGame(opts) {
       padPrev = p.buttons.map(x => x.pressed || x.value > .5);
       return out;
     }
+    if (state === 'notice') {
+      if (edge(0)) ackNotice();
+      else if (edge(9)) { padPrev = p.buttons.map(x => x.pressed); pause(); return out; }
+      padPrev = p.buttons.map(x => x.pressed || x.value > .5);
+      return out;
+    }
     if (ov.open) {
-      if (edge(5) || edge(15)) setOvTab(1);
-      else if (edge(4) || edge(14)) setOvTab(0);
+      if (edge(5)) setOvTab(Math.min(ov.tab + 1, 2));
+      else if (edge(4)) setOvTab(Math.max(ov.tab - 1, 0));
+      else if (ov.tab === 2 && edge(13)) movePower(1);
+      else if (ov.tab === 2 && edge(12)) movePower(-1);
+      else if (ov.tab === 2 && edge(0)) usePower();
+      else if (edge(15)) setOvTab(Math.min(ov.tab + 1, 2));
+      else if (edge(14)) setOvTab(Math.max(ov.tab - 1, 0));
       else if (edge(17) || edge(1) || edge(9) || edge(8)) closeOverlay();
       padPrev = p.buttons.map(x => x.pressed || x.value > .5);
       return out;
@@ -762,6 +836,7 @@ export async function createGame(opts) {
     if (edge(0)) jumpPressed = true;
     if (edge(2)) interactPressed = true;
     if (edge(10)) sprintPressed = true;
+    if (edge(1)) dashPressed = true;
     if (edge(9) || edge(8)) { padPrev = p.buttons.map(x => x.pressed); pause(); return out; }
     if (b(0)) out.jumpHeld = true;
     out.sprint = b(7) || b(5);
@@ -797,6 +872,9 @@ export async function createGame(opts) {
     dead() { [392, 311.13, 261.63, 196].forEach((f, i) => A.tone({ f, at: i * .16, dur: .7, vol: .07, type: 'triangle', send: .7 })); },
     crack() { A.noise({ dur: .25, from: 3500, to: 800, vol: .08, send: .1, q: 3 }); A.tone({ f: 160, to: 90, type: 'square', dur: .08, vol: .03, send: 0 }); },
     crumble() { A.noise({ dur: .9, from: 900, to: 120, vol: .1, send: .5 }); },
+    dash() { A.noise({ dur: .32, from: 500, to: 7000, vol: .09, send: .2, q: .8 }); A.tone({ f: 180, to: 720, type: 'triangle', dur: .22, vol: .08, send: .2 }); },
+    dashReady() { A.tone({ f: 1318.5, dur: .08, vol: .025, send: .2 }); },
+    count(go) { A.tone({ f: go ? 880 : 440, dur: go ? .5 : .18, vol: .09, type: 'triangle', send: .3 }); if (go) A.tone({ f: 1318.5, at: .02, dur: .45, vol: .05, send: .5 }); },
     buzz(p) { if (P.pos.distanceTo(p) > 14) return; A.tone({ f: 190, to: 260, type: 'sawtooth', dur: .35, vol: .025, send: .1 }); A.tone({ f: 380, to: 520, type: 'square', dur: .3, vol: .012, send: 0 }); },
     windup(p) { if (P.pos.distanceTo(p) > 16) return; A.tone({ f: 220, to: 880, type: 'sawtooth', dur: .5, vol: .035, send: .15 }); A.noise({ dur: .45, from: 800, to: 5000, vol: .03, send: .05, q: 3 }); },
     spikeWarn() { A.tone({ f: 880, dur: .06, vol: .03, type: 'square', send: .05 }); },
@@ -858,9 +936,32 @@ export async function createGame(opts) {
     H.title.querySelector('p').textContent = L.def.sub;
     H.title.classList.remove('show'); void H.title.offsetWidth; H.title.classList.add('show');
     ensureHum(); setHum(0);
+    P.stamina = 100; P.dashCd = 0; P.dashT = 0; dashPressed = false; trail.t = 0; trailPts.visible = false;
+    H.dash.classList.toggle('on', !!L.def.dash);
+    H.notice.classList.remove('show'); H.count.className = 'g-count';
+    // dash maps explain the dash once per session; then the optional speedrun countdown
+    if (L.def.dash && !noticeSeen.has(i)) {
+      state = 'notice'; noticeSeen.add(i);
+      const pad = showPad();
+      H.notice.querySelector('.gn-key').textContent = pad ? '○' : 'F';
+      H.notice.querySelector('.gn-ok').innerHTML = `<span class="gk">${pad ? '✕' : 'Enter'}</span>OK`;
+      setTimeout(() => { if (state === 'notice') H.notice.classList.add('show'); }, 700);
+    } else beginRun();
     lastT = performance.now();
     renderFrame(0);
     fade(0, 900);
+    if (!getPad() && state !== 'notice') requestLock();
+  }
+  const noticeSeen = new Set();
+  let cdT = 0, cdShown = -1;
+  function beginRun() {
+    if (S.countdown) { state = 'countdown'; cdT = 3; cdShown = -1; } else state = 'playing';
+  }
+  function ackNotice() {
+    if (state !== 'notice') return;
+    H.notice.classList.remove('show');
+    A.tone({ f: 660, to: 990, type: 'triangle', dur: .1, vol: .08, send: .2 }); rumble(60, .1, .3);
+    beginRun();
     if (!getPad()) requestLock();
   }
   function pause() {
@@ -1200,12 +1301,33 @@ export async function createGame(opts) {
     if (P.launched) {
       const hs = Math.hypot(P.vel.x, P.vel.z);
       if (wishMag > .1) { const d = wish.clone().normalize(); P.vel.x = damp(P.vel.x, d.x * hs, 2.5, dt); P.vel.z = damp(P.vel.z, d.z * hs, 2.5, dt); }
-    } else if (P.hitT <= 0) {
+    } else if (P.hitT <= 0 && !(P.dashT > 0)) {
       const acc = P.grounded ? 48 : 16;
       P.vel.x += clamp(wish.x * speed - P.vel.x, -acc * dt, acc * dt);
       P.vel.z += clamp(wish.z * speed - P.vel.z, -acc * dt, acc * dt);
     }
 
+    // dash (only on maps that enable it): a quick burst forward, costs stamina, 1 s cooldown
+    if (L.def.dash) {
+      P.dashCd = Math.max(0, P.dashCd - dt);
+      if (P.dashT <= 0) P.stamina = Math.min(100, P.stamina + 28 * dt);
+      if (dashPressed) {
+        dashPressed = false;
+        if (P.dashCd <= 0 && P.stamina >= 34 && P.hitT <= 0 && !P.launched) {
+          const d = wishMag > .1 ? wish.clone().normalize() : new THREE.Vector3(Math.sin(P.yaw), 0, Math.cos(P.yaw));
+          P.dashDir = d; P.dashT = .2; P.dashCd = 1; P.stamina -= 34;
+          P.invuln = Math.max(P.invuln, .25); P.vel.y = Math.max(P.vel.y, 0);
+          snd.dash(); rumble(120, .3, .6); cam.shake = Math.max(cam.shake, .25);
+          emit(P.pos.clone().setY(P.pos.y + .8), pal.trim, 26, 5, .5);
+        } else if (P.dashCd > 0 || P.stamina < 34) { H.dash.classList.remove('deny'); void H.dash.offsetWidth; H.dash.classList.add('deny'); }
+      }
+      if (P.dashT > 0) {
+        P.dashT -= dt;
+        P.vel.x = P.dashDir.x * 24; P.vel.z = P.dashDir.z * 24; P.vel.y = Math.max(P.vel.y, -1);
+        if (Math.random() < dt * 60) emit(P.pos.clone().setY(P.pos.y + .9), pal.trim, 2, 1.2, .35);
+        if (P.dashT <= 0) { P.vel.x *= .4; P.vel.z *= .4; }
+      }
+    } else dashPressed = false;
     if (jumpPressed) { P.jumpBuf = .14; jumpPressed = false; }
     P.jumpBuf -= dt; P.coyote = P.grounded ? .12 : P.coyote - dt;
     if (P.jumpBuf > 0 && P.coyote > 0 && P.hitT <= 0) {
@@ -1214,7 +1336,7 @@ export async function createGame(opts) {
       emit(P.pos, pal.trim, 12, 3, .6);
     }
     const holdJump = keys.has('Space') || inp.jumpHeld;
-    const g = P.vel.y > 0 ? (holdJump || P.launched ? 27 : 46) : 40;
+    const g = P.dashT > 0 ? 0 : P.vel.y > 0 ? (holdJump || P.launched ? 27 : 46) : 40;
     const prevY = P.pos.y;
     P.vel.y = Math.max(P.vel.y - g * dt, -45);
 
@@ -1356,14 +1478,29 @@ export async function createGame(opts) {
       d.obj.rotation.z = Math.sin(t * 2) * .1;
     }
     for (const b of L.insects) {
-      const flap = Math.sin(t * (b.state === 'windup' || b.state === 'lunge' ? 95 : 60) + b.seed) * .9;
-      if (b.wingL) b.wingL.rotation.z = flap; if (b.wingR) b.wingR.rotation.z = -flap;
-      const shake = b.state === 'windup' ? (Math.random() - .5) * .12 : 0;
+      const fast = b.state === 'windup' || b.state === 'lunge';
+      // two wing pairs beat slightly out of phase; the blur speeds up when it attacks
+      const ph = t * (fast ? 88 : 58) + b.seed, flap = Math.sin(ph) * .85, flap2 = Math.sin(ph - .9) * .7;
+      if (b.wingL) b.wingL.rotation.z = -flap; if (b.wingR) b.wingR.rotation.z = flap;
+      if (b.wingL2) b.wingL2.rotation.z = -flap2; if (b.wingR2) b.wingR2.rotation.z = flap2;
+      const shake = b.state === 'windup' ? (Math.random() - .5) * .1 : 0;
       b.obj.position.set(b.pos.x + shake, b.pos.y + Math.sin(t * 9 + b.seed) * .05, b.pos.z + shake);
-      b.heading = damp(b.heading, Math.atan2(b.dir.x, b.dir.z) + Math.PI, 10, dt);
-      b.obj.rotation.set(b.state === 'lunge' ? -.35 : b.state === 'windup' ? .25 : Math.sin(t * 3 + b.seed) * .08, b.heading, Math.sin(t * 4 + b.seed) * .12);
+      // the model's head points along +Z, so it faces its direction of travel directly
+      const want = Math.atan2(b.dir.x, b.dir.z);
+      let dh = want - b.heading; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+      const turn = dh * (1 - Math.exp(-9 * dt)); b.heading += turn;
+      b.bank = damp(b.bank, clamp(-turn / Math.max(dt, 1e-3) * .12, -.6, .6), 6, dt);   // leans into turns
+      const pitch = b.state === 'lunge' ? .35 : b.state === 'windup' ? -.3 : b.state === 'retreat' ? -.15 : .1 + Math.sin(t * 3 + b.seed) * .06;
+      b.obj.rotation.set(pitch, b.heading, b.bank + Math.sin(t * 4 + b.seed) * .06, 'YXZ');
+      // abdomen pumps while flying and curls its sting forward when it winds up
+      if (b.abd) b.abd.rotation.x = b.state === 'windup' ? damp(b.abd.rotation.x, .75, 10, dt) : damp(b.abd.rotation.x, Math.sin(t * 5 + b.seed) * .12, 8, dt);
+      // legs dangle and sway, and tuck in during a lunge
+      const tuck = b.state === 'lunge' ? .9 : b.state === 'windup' ? .5 : 0, sway = Math.sin(t * 3.2 + b.seed) * .12;
+      if (b.legsL) b.legsL.rotation.set(damp(b.legsL.rotation.x, tuck * .6 + sway, 8, dt), 0, damp(b.legsL.rotation.z, -tuck * .5, 8, dt));
+      if (b.legsR) b.legsR.rotation.set(damp(b.legsR.rotation.x, tuck * .6 - sway, 8, dt), 0, damp(b.legsR.rotation.z, tuck * .5, 8, dt));
       if (b.eye) b.eye.emissiveIntensity = damp(b.eye.emissiveIntensity, b.state === 'windup' || b.state === 'lunge' ? 14 : b.state === 'chase' ? 7 : 3.5, 10, dt);
     }
+    updateTrail(dt, t);
     let humNear = 99;
     for (const l of L.lasers) {
       l.beam.rotation.y = l.angle;
@@ -1402,7 +1539,7 @@ export async function createGame(opts) {
     if (sh > .001) camera.position.add(new THREE.Vector3((rnd() - .5) * sh, (rnd() - .5) * sh, (rnd() - .5) * sh));
     camera.lookAt(cam.target);
     if (L.trees && L.trees.length) sinkTrees(dt);
-    cam.fov = damp(cam.fov, S.fov + (info.sprinting ? 7 : 0) + (P.launched ? 10 : 0), 4, dt);
+    cam.fov = damp(cam.fov, S.fov + (info.sprinting ? 7 : 0) + (P.launched ? 10 : 0) + (P.dashT > 0 ? 14 : 0), P.dashT > 0 ? 14 : 4, dt);
     if (Math.abs(camera.fov - cam.fov) > .01) { camera.fov = cam.fov; camera.updateProjectionMatrix(); }
   }
 
@@ -1439,7 +1576,7 @@ export async function createGame(opts) {
   function renderFrame(dt) { composer.render(dt); }
 
   /* ---------- records / collection overlay (touchpad or Tab) ---------- */
-  const ov = { open: false, tab: 0, relockAfter: false };
+  const ov = { open: false, tab: 0, prevTab: 0, relockAfter: false, psel: 0 };
   const ovEl = hud.querySelector('.g-ov'), ovBody = hud.querySelector('.ov-body');
   hud.querySelectorAll('.ov-tabs button').forEach(b => b.addEventListener('click', () => setOvTab(+b.dataset.t)));
   ovEl.addEventListener('click', e => { if (e.target === ovEl) closeOverlay(); });
@@ -1462,19 +1599,96 @@ export async function createGame(opts) {
   function setOvTab(t) {
     if (t === ov.tab) { audio.SFX.bump(); return; }
     ov.tab = t; renderOverlay();
-    audio.SFX.change(t ? 1 : -1);
+    audio.SFX.change(t > ov.prevTab ? 1 : -1); ov.prevTab = t;
     rumble(40, 0, .3);
+  }
+  /* ---------- relic powers: spend a collected relic to light a 1-minute trail to your next goal ---------- */
+  const ownedRelics = prog => {
+    const out = [];
+    LEVELS.forEach((l, li) => (l.relics || []).forEach((name, j) => {
+      if (prog.relics && prog.relics[li] && prog.relics[li][j]) out.push({ li, j, name, icon: l.relicIds ? l.relicIds[j] : li * 2 + j, col: `rgb(${(l.palette.aur || [.3, 1, .7]).map(v => v * 255 | 0).join(',')})` });
+    }));
+    return out;
+  };
+  function powersHTML(prog) {
+    const list = ownedRelics(prog);
+    ov.psel = clamp(ov.psel, 0, Math.max(list.length - 1, 0));
+    const active = trail.t > 0 ? `<div class="ov-pow-live">Trail active · ${Math.ceil(trail.t)}s left</div>` : '';
+    if (!list.length) return `<div class="ov-pow-empty"><b>No relics yet</b><small>Find a hidden relic, then spend it here to reveal a glowing trail to your next goal for 1 minute.</small></div>`;
+    return `<div class="ov-pow-wrap"><div class="ov-pow-head"><b>Pathfinder</b><small>Spend a relic to light a trail on the ground to the nearest star shard, or the portal once you have them all. Lasts 1 minute. The relic leaves your Collection; find it again to get it back.</small>${active}</div>
+      <div class="ov-pows">${list.map((r, k) => `<button class="ov-pow${k === ov.psel ? ' sel' : ''}" style="--c:${r.col};--d:${k * 30}ms"><img src="relics/relic_${r.icon}.png" alt=""><span><b>${r.name}</b><small>${LEVELS[r.li].name}</small></span><em>USE</em></button>`).join('')}</div></div>`;
+  }
+  function markPower() { ovBody.querySelectorAll('.ov-pow').forEach((el, k) => el.classList.toggle('sel', k === ov.psel)); const el = ovBody.querySelector('.ov-pow.sel'); if (el) el.scrollIntoView({ block: 'nearest' }); audio.SFX.hover(ov.psel, true); }
+  function movePower(d) {
+    const n = ownedRelics((getProgress && getProgress()) || {}).length;
+    const k = ov.psel + d; if (k < 0 || k >= n) { audio.SFX.bump(); return; }
+    ov.psel = k; markPower();
+  }
+  function usePower() {
+    const list = ownedRelics((getProgress && getProgress()) || {}), r = list[ov.psel];
+    if (!r) { audio.SFX.bump(); return; }
+    onUseRelic && onUseRelic(r.li, r.j);
+    // a ghost relic of this level becomes claimable again once you restart
+    trail.t = 60; trail.recalc = 0;
+    closeOverlay(true);
+    if (ov.relockAfter && !getPad()) requestLock();
+    [523.25, 783.99, 1046.5, 1567.98].forEach((f, i) => A.tone({ f, at: i * .06, dur: 1.2, vol: .05, send: .8 }));
+    A.noise({ dur: .9, from: 300, to: 7000, vol: .05, send: .6 });
+    rumble(300, .3, .6);
+    message(`${r.name} · trail revealed`, 3);
+    emit(P.pos.clone().setY(P.pos.y + 1), new THREE.Color(...(pal.aur || [.3, 1, .7])), 80, 7, 1.2);
+  }
+  const TRAIL_N = 500;
+  const trailPos = new Float32Array(TRAIL_N * 3), trailCol = new Float32Array(TRAIL_N * 3);
+  const trailGeo = new THREE.BufferGeometry();
+  trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
+  trailGeo.setAttribute('color', new THREE.BufferAttribute(trailCol, 3));
+  const trailPts = new THREE.Points(trailGeo, new THREE.PointsMaterial({ size: 1.0, map: glowTex, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  trailPts.frustumCulled = false; trailPts.visible = false; scene.add(trailPts);
+  const trail = { t: 0, recalc: 0, n: 0 };
+  function trailTarget() {
+    const s_ = L.shards.filter(x => !x.taken);
+    if (!s_.length) return [cellOf(L.portal.pos.x, L.portal.pos.z)];
+    return s_.map(x => [x.r, x.c]);
+  }
+  function updateTrail(dt, t) {
+    if (trail.t <= 0) { trailPts.visible = false; return; }
+    trail.t -= dt; trail.recalc -= dt;
+    if (trail.recalc <= 0) {
+      trail.recalc = .4;
+      const [pr, pc] = cellOf(P.pos.x, P.pos.z), field = pathField(pr, pc);
+      let best = null;
+      for (const [r, c] of trailTarget()) { const d = field.get(r * 1000 + c); if (d != null && (!best || d < best.d)) best = { d, k: r * 1000 + c }; }
+      const cells = [];
+      if (best) { let k = best.k; while (k != null) { cells.unshift(k); k = field.prev.get(k); } }
+      const pts = [new THREE.Vector3(P.pos.x, 0, P.pos.z)];
+      cells.slice(1).forEach(k => pts.push(cellPos(Math.floor(k / 1000), k % 1000)));
+      let n = 0;
+      for (let a = 0; a < pts.length - 1 && n < TRAIL_N; a++) {
+        const seg = pts[a].distanceTo(pts[a + 1]), steps = Math.max(1, Math.round(seg / .9));
+        for (let k = 0; k < steps && n < TRAIL_N; k++, n++) { const v = pts[a].clone().lerp(pts[a + 1], k / steps); trailPos.set([v.x, .22, v.z], n * 3); }
+      }
+      trail.n = n; trailGeo.setDrawRange(0, n); trailGeo.attributes.position.needsUpdate = true;
+    }
+    const col = new THREE.Color(...(pal.aur || [.3, 1, .7])), fade = Math.min(1, trail.t / 4);
+    for (let k = 0; k < trail.n; k++) {
+      const w = (.3 + .7 * Math.max(0, Math.sin(k * .45 - t * 7))) * fade;   // pulses flow toward the goal
+      trailCol[k * 3] = col.r * w; trailCol[k * 3 + 1] = col.g * w; trailCol[k * 3 + 2] = col.b * w;
+    }
+    trailGeo.attributes.color.needsUpdate = true;
+    trailPts.visible = true;
   }
   const medalDot = m => m ? `<i class="ov-medal ${m}"></i>` : '';
   function renderOverlay() {
     const prog = (getProgress && getProgress()) || {};
     hud.querySelector('.ov-keys').innerHTML = showPad()
-      ? `<b>L1</b><b>R1</b> Switch <span></span><b>Touchpad</b> Close`
-      : `<b>←</b><b>→</b> Switch <span></span><b>Tab</b> Close`;
+      ? `<b>L1</b><b>R1</b> Switch <span></span>${ov.tab === 2 ? '<b>✕</b> Use <span></span>' : ''}<b>Touchpad</b> Close`
+      : `<b>←</b><b>→</b> Switch <span></span>${ov.tab === 2 ? '<b>Enter</b> Use <span></span>' : ''}<b>Tab</b> Close`;
     hud.querySelectorAll('.ov-tabs button').forEach(b => b.classList.toggle('on', +b.dataset.t === ov.tab));
     hud.querySelector('.ov-ind').style.transform = `translateX(${ov.tab * 100}%)`;
     ovBody.classList.remove('swap'); void ovBody.offsetWidth; ovBody.classList.add('swap');
-    ovBody.innerHTML = ov.tab === 0 ? recordsHTML(prog) : collectionHTML(prog);
+    ovBody.innerHTML = ov.tab === 0 ? recordsHTML(prog) : ov.tab === 1 ? collectionHTML(prog) : powersHTML(prog);
+    if (ov.tab === 2) ovBody.querySelectorAll('.ov-pow').forEach((el, k) => { el.addEventListener('click', () => { ov.psel = k; usePower(); }); el.addEventListener('pointerenter', () => { if (ov.psel !== k) { ov.psel = k; markPower(); } }); });
   }
   function recordsHTML(prog) {
     const i = levelIndex, def = LEVELS[i];
@@ -1563,6 +1777,17 @@ export async function createGame(opts) {
       let left = dt;
       while (left > 1e-5) { const h = Math.min(left, 1 / 120); info = step(h, inp); left -= h; }
       interact();
+    } else if (state === 'countdown') {
+      // speedrun countdown: you can look around, but the clock and your feet wait for GO
+      cdT -= dt;
+      const n = Math.ceil(cdT);
+      if (n !== cdShown) {
+        cdShown = n;
+        H.count.textContent = n > 0 ? n : 'GO!';
+        H.count.className = 'g-count'; void H.count.offsetWidth; H.count.classList.add('show', n > 0 ? 'num' : 'go');
+        snd.count(n <= 0); rumble(n > 0 ? 50 : 160, n > 0 ? .1 : .4, .3);
+      }
+      if (cdT <= 0) { state = 'playing'; time = 0; jumpPressed = false; dashPressed = false; }
     } else if (state === 'entering') {
       completeAt += dt;
       const pt = L.portal.pos;
@@ -1577,6 +1802,13 @@ export async function createGame(opts) {
     renderFrame(dt);
 
     H.timer.textContent = fmtTime(time);
+    if (L.def.dash) {
+      H.dashFill.style.width = (P.stamina || 0).toFixed(1) + '%';
+      const ready = P.dashCd <= 0 && P.stamina >= 34;
+      if (ready !== H.dash.classList.contains('is-ready')) { H.dash.classList.toggle('is-ready', ready); if (ready && state === 'playing') snd.dashReady(); }
+      H.dashKey.textContent = showPad() ? '○' : 'F';
+      H.dash.style.setProperty('--cd', P.dashCd.toFixed(3));
+    }
     H.timer.classList.toggle('over', time > L.def.par);
     if (msgTimer > 0) { msgTimer -= dt; if (msgTimer <= 0) H.msg.classList.remove('show'); }
     fpsAcc += dt; fpsN++;

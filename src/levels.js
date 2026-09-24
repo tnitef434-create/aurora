@@ -9,7 +9,7 @@
 //  X  spike trap — pulses up and down, cross when it's retracted
 //  H  hidden relic — optional collectible, saved to your Collection
 //  I  insect (jungle) — wanders the maze, chases you when it sees you, then winds up and lunges
-// Optional per level: chapter (default 1), theme ('jungle' = island/nature look), relicIds (relic models to reuse), hearts (max hearts cap), hazard (laser/drone speed ×)
+// Optional per level: dash (enables the dash + stamina bar), chapter (default 1), theme ('jungle' = island/nature look), relicIds (relic models to reuse), hearts (max hearts cap), hazard (laser/drone speed ×)
 export const TILE = 4;
 
 export const LEVELS = [
@@ -131,7 +131,7 @@ export const LEVELS = [
     ],
   },
   {
-    name: "Aurora's Heart", par: 230,
+    name: "Aurora's Heart", par: 230, dash: true,
     sub: 'Everything you have learned. Reach the heart of the aurora.',
     relics: ['Heart of Aurora', 'Northern Crown'],
     palette: { sky1: 0x061a2a, sky2: 0x12062a, neb: [0.3, 1.0, 0.6], neb2: [0.8, 0.4, 1.0], crystal: 0xb69cff, trim: 0x7fffd4, fog: 0x060c16, sun: 0xe8fff4, planet: 0x7fd4ff, aur: [0.35, 1.0, 0.65] },
@@ -192,7 +192,7 @@ export const LEVELS = [
     ],
   },
   {
-    name: 'Whispering Grove', par: 270, chapter: 2, theme: 'jungle', demo: true,
+    name: 'Whispering Grove', par: 270, chapter: 2, theme: 'jungle', demo: true, dash: true,
     sub: 'A vast island forest. Trees block the way, thorns wait in the grass, and something is buzzing…',
     relics: ['Amber Heartseed', 'Moonleaf Totem'],
     relicIds: [12, 13],
