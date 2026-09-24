@@ -2019,5 +2019,46 @@ document.addEventListener('visibilitychange', () => {
 });
 })();
 </script>
+<div class="update" id="update">
+  <i class="u-dot"></i>
+  <div class="u-txt"><b>Aurora <span id="uVer"></span> is available</b><small>You have <span id="uCur"></span>. Download the new version from GitHub.</small></div>
+  <a class="u-btn" id="uGet" target="_blank" rel="noopener">Download</a>
+  <button class="u-x" id="uX" aria-label="Dismiss">✕</button>
+</div>
+<style>
+.update{position:fixed;left:50%;top:92px;z-index:40;display:flex;align-items:center;gap:16px;padding:12px 12px 12px 18px;border-radius:18px;
+  background:rgba(12,14,24,.82);border:1px solid rgba(127,255,212,.35);box-shadow:0 18px 50px -12px rgba(0,0,0,.6),0 0 30px -8px rgba(127,255,212,.35);
+  backdrop-filter:blur(16px);color:#fff;font-family:inherit;transform:translate(-50%,-20px);opacity:0;pointer-events:none;transition:opacity .4s,transform .5s cubic-bezier(.2,.9,.25,1)}
+.update.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+body.ingame .update{display:none}
+.u-dot{width:10px;height:10px;border-radius:50%;background:#7fffd4;box-shadow:0 0 12px #7fffd4;animation:uPulse 1.6s ease-in-out infinite}
+@keyframes uPulse{50%{transform:scale(1.5);opacity:.6}}
+.u-txt b{display:block;font-size:15px;font-weight:800}.u-txt small{display:block;font-size:12px;color:rgba(255,255,255,.6);font-weight:600;margin-top:2px}
+.u-btn{padding:9px 16px;border-radius:12px;background:linear-gradient(135deg,#7fffd4,#b69cff);color:#0b0e18;font-weight:900;font-size:14px;text-decoration:none;cursor:pointer}
+.u-btn:hover{filter:brightness(1.1)}
+.u-x{width:32px;height:32px;border:0;border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:13px;cursor:pointer}
+.u-x:hover{background:rgba(255,255,255,.18)}
+</style>
+<script>
+// Update notice: compares this build's version with the latest GitHub release and offers the download.
+(() => {
+  const cur = window.AuroraGame && window.AuroraGame.version;
+  if (!cur || !window.fetch) return;
+  const newer = (a, b) => { const x = a.split('.').map(Number), y = b.split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); return false; };
+  fetch('https://api.github.com/repos/tnitef434-create/aurora/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(r => r.ok ? r.json() : null).then(rel => {
+      if (!rel || !rel.tag_name) return;
+      const latest = rel.tag_name.replace(/^v/, '');
+      if (!newer(latest, cur)) return;
+      try { if (localStorage.getItem('aurora-update-dismissed') === latest) return; } catch (e) {}
+      const el = document.getElementById('update');
+      document.getElementById('uVer').textContent = latest;
+      document.getElementById('uCur').textContent = cur;
+      document.getElementById('uGet').href = rel.html_url;
+      document.getElementById('uX').onclick = () => { el.classList.remove('show'); try { localStorage.setItem('aurora-update-dismissed', latest); } catch (e) {} };
+      setTimeout(() => el.classList.add('show'), 2500);
+    }).catch(() => {});
+})();
+</script>
 </body>
 </html>

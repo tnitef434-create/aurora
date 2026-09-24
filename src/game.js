@@ -1429,4 +1429,5 @@ export async function createGame(opts) {
   };
 }
 
-window.AuroraGame = { createGame, levels: LEVELS, TILE, medalFor };
+import pkg from '../package.json';
+window.AuroraGame = { createGame, levels: LEVELS, TILE, medalFor, version: pkg.version };
