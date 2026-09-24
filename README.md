@@ -12,7 +12,7 @@ Download from [Releases](../../releases):
 
 ## Features
 
-- 7 levels: The Drift, Nebula Gardens, The Core, Shattered Halo, Laser Garden, Aurora's Heart and **Level Impossible**
+- Chapter 1: 7 levels: The Drift, Nebula Gardens, The Core, Shattered Halo, Laser Garden, Aurora's Heart and **Level Impossible** (Chapter 2 coming soon)
 - Hazards: patrol drones, rotating lasers, spike traps, crumbling tiles, moving platforms and bounce pads
 - Hearts, par times and gold/silver/bronze medals
 - 14 hidden relics, each with its own design, saved to your Collection
