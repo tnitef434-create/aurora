@@ -968,10 +968,10 @@ export async function createGame(opts) {
     H.complete.querySelector('.g-medal').className = 'g-medal ' + medal;
     H.complete.querySelector('.g-medal').innerHTML = `<span>${T(medal)}</span>`;
     H.complete.querySelector('small').textContent = `${T('level')} ${levelNum(levelIndex)} · ${L.def.name}`;
-    H.complete.querySelector('h1').textContent = last ? T('finalT').replace(/1/, chapterOf(levelIndex)) : T('complete');
+    H.complete.querySelector('h1').textContent = last ? (L.def.demo ? 'Demo complete' : T('finalT').replace(/1/, chapterOf(levelIndex))) : T('complete');
     H.complete.querySelector('.g-stats').innerHTML =
       `<div><span>${T('time')}</span><b>${fmtTime(time)}</b></div><div><span>${T('par')}</span><b>${fmtTime(L.def.par)}</b></div><div><span>${T('best')}</span><b>${fmtTime(res.best ?? time)}</b></div><div><span>${T('relics')}</span><b>◆ ${found}/${L.relics.length}</b></div>` +
-      (res.newBest ? `<em>${T('newBest')}</em>` : '') + (last ? `<p>${T('finalS')}</p>` : '');
+      (res.newBest ? `<em>${T('newBest')}</em>` : '') + (last ? `<p>${L.def.demo ? 'Chapter 2 continues in a future update. Thanks for playing the demo!' : T('finalS')}</p>` : '');
     const padNow = showPad();
     H.complete.querySelector('[data-a="next"]').innerHTML = `<span class="gk">${padNow ? '✕' : 'Enter'}</span>${T('cont')}`;
     H.complete.querySelector('[data-a="menu"]').innerHTML = `<span class="gk">${padNow ? '○' : 'Esc'}</span>${T('menu')}`;

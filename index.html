@@ -1121,7 +1121,7 @@ const fmtT = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}
 // the rest unlock by clearing the level before them in the same chapter
 const CHAPTERS = [
   { n: 1, name: 'The Aurora', art: 'ch1', blurb: 'Crystal mazes adrift in the void.' },
-  { n: 2, name: 'The Wilds', art: 'ch2', blurb: 'A living island floating under the stars.' }
+  { n: 2, name: 'The Wilds', art: 'ch2', blurb: 'A living island floating under the stars. Demo: first level.' }
 ];
 const chapterOf = i => (LEVEL_INFO[i] && LEVEL_INFO[i].chapter) || 1;
 const chapterLevels = n => LEVEL_INFO.map((l, i) => i).filter(i => chapterOf(i) === n);
@@ -1508,8 +1508,8 @@ const ROW = {
     const card = ch => {
       const ids = chapterLevels(ch.n), total = ids.length, done = ids.filter(i => PROG.best[i] != null).length;
       const rel = ids.reduce((n, i) => n + ((PROG.relics[i] || []).filter(Boolean).length), 0), relT = ids.reduce((n, i) => n + (LEVEL_INFO[i].relics || []).length, 0);
-      const isNew = ch.n === 2 && !done;
-      return `<div class="ch-card ${ch.art}"><div class="ch-art"><i></i><i></i><i></i></div>${isNew ? '<span class="ch-badge new">NEW</span>' : ''}<span class="ch-num">CHAPTER ${ch.n}</span><b>${ch.name}</b>
+      const isDemo = ids.some(i => LEVEL_INFO[i].demo);
+      return `<div class="ch-card ${ch.art}"><div class="ch-art"><i></i><i></i><i></i></div>${isDemo ? '<span class="ch-badge new">DEMO</span>' : ''}<span class="ch-num">CHAPTER ${ch.n}</span><b>${ch.name}</b>
         <small>${total} level${total > 1 ? 's' : ''} · ${done}/${total} cleared · ◆ ${rel}/${relT}</small>
         <div class="ch-pips">${ids.map(i => `<i class="${PROG.medal[i] || (PROG.best[i] != null ? 'done' : isUnlocked(i) ? 'open' : '')}" title="${LEVEL_INFO[i].name}"></i>`).join('')}</div>
         <div class="ch-bar"><i style="width:${done / total * 100}%"></i></div></div>`;
