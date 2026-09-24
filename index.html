@@ -84,6 +84,8 @@ button{font:inherit;color:inherit}
   filter:blur(14px);opacity:0;transition:opacity .5s var(--ease),transform .6s var(--ease);transform:scaleX(.6)}
 .card.focused .halo{opacity:1;transform:scaleX(1)}
 .card .halo,.card .glow-top{display:none}
+.card.tab-proxy{position:fixed;opacity:0;pointer-events:none;z-index:-1}
+.card.tab-proxy h2{font-size:15px;margin:0}.card.tab-proxy .icon svg{width:20px;height:20px}
 /* liquid edge light: a conic gradient masked to the border ring; angle + length are driven by a JS spring */
 .edge,.edge-glow{position:absolute;inset:0;border-radius:22px;pointer-events:none;opacity:0;transition:opacity .55s var(--ease)}
 .edge-glow{inset:-5px;border-radius:27px;filter:blur(12px)}
@@ -190,9 +192,12 @@ button{font:inherit;color:inherit}
 .back:active{transform:scale(.94)}
 .crumb{font-weight:700;color:var(--faint);font-size:15px;display:flex;align-items:center;gap:8px}
 .crumb b{color:#fff}
+.kx.kbd{width:auto!important;color:#fff;padding:0 8px;font-size:12px;font-weight:800;border-radius:8px}
 .saved{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--faint)}
 .saved i{width:8px;height:8px;border-radius:50%;background:#5dffa2;box-shadow:0 0 8px #5dffa2;transition:transform .4s var(--spring)}
 .saved.ping i{animation:ping .6s var(--ease)}
+.saved.dirty{color:#ffd9a0}.saved.dirty i{background:#ffb14a;box-shadow:0 0 8px #ffb14a}
+.row.apply{color:#7fffd4}.row.apply.dirty{background:linear-gradient(90deg,rgba(127,255,212,.18),rgba(127,255,212,.04));box-shadow:inset 0 0 0 1px rgba(127,255,212,.45)}
 @keyframes ping{0%{transform:scale(1)}40%{transform:scale(2.2)}100%{transform:scale(1)}}
 .panel-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(240px,.85fr) minmax(420px,1.5fr);gap:64px;padding:26px 48px 96px}
 .panel-hero{position:relative}
@@ -460,6 +465,17 @@ body.ingame #root{display:none}
 .lvl-diff{display:flex;gap:3px;margin-left:auto}
 .lvl-diff i{width:6px;height:10px;border-radius:2px;background:rgba(255,255,255,.18)}
 .lvl-diff i.on{background:linear-gradient(#ff7fd6,#b69cff)}
+/* chapters */
+.ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+.ch-card{position:relative;padding:26px 24px;min-height:170px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:transform .3s var(--ease),border-color .3s,box-shadow .3s}
+.ch-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.25)}
+.ch-card.sel{border-color:rgba(200,240,255,.75);box-shadow:0 0 0 2px rgba(127,255,212,.35),0 18px 40px -10px rgba(127,255,212,.35);transform:translateY(-5px)}
+.ch-card.soon{opacity:.5;cursor:default;background:repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 12px,rgba(255,255,255,.06) 12px 24px)}
+.ch-num{font-size:13px;letter-spacing:.3em;font-weight:900;color:#7fffd4}
+.ch-card b{display:block;font-size:28px;font-weight:900;margin:10px 0 6px}
+.ch-card small{color:var(--faint);font-weight:600;font-size:13px}
+.ch-bar{height:6px;margin-top:18px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden}.ch-bar i{display:block;height:100%;background:linear-gradient(90deg,#7fffd4,#b69cff)}
+.ch-badge{position:absolute;top:18px;right:18px;padding:5px 11px;border-radius:99px;background:rgba(255,255,255,.12);font-size:11px;font-weight:900;letter-spacing:.14em}
 /* collection */
 .coll-head{display:flex;align-items:center;gap:18px;margin-bottom:16px}
 .coll-head b{font-size:34px;font-weight:900}
@@ -646,7 +662,7 @@ body.ingame #root{display:none}
           <button class="back" id="backBtn"><span class="kx" id="bko"></span>Back</button>
           <div class="crumb">Menu <span>›</span> <b id="crumb"></b></div>
         </div>
-        <div class="saved" id="saved"><i></i>Changes save automatically</div>
+        <div class="saved" id="saved"><i></i><span>No unsaved changes</span></div>
       </div>
       <div class="panel-body">
         <aside class="panel-hero" id="hero"><h1 id="pTitle"></h1><p id="pSub"></p><div class="hero-icon" id="pIcon"></div></aside>
@@ -692,7 +708,7 @@ const h = html => { const t = document.createElement('template'); t.innerHTML = 
 
 /* ============================== SETTINGS ============================== */
 const DEFAULTS = {
-  master: 80, music: 45, sfx: 90, hoverSfx: true, uiSound: 'Clicks',
+  master: 80, music: 45, sfx: 90, hoverSfx: true, uiSound: 'Clicks', padPrompts: true,
   language: 'English', region: 'Auto', tooltips: true, sprint: false, shake: 50, showFps: false, autoPick: true,
   window: window.game ? 'Fullscreen' : 'Windowed', res: '1920 × 1080', brightness: 100, uiScale: 100, fpsCap: '144', motionBlur: false, reduceMotion: false,
   sensX: 6.5, sensY: 6.5, invert: false, vibration: true, deadzone: 12, mode: 0,
@@ -939,13 +955,19 @@ const G = {
   l: `<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   r: `<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
 };
-['pkx', 'skx'].forEach(id => $('#' + id).innerHTML = G.x);
-$('#bko').innerHTML = G.o;
+// keyboard labels used instead of PlayStation icons when Controller Prompts is off
+const KB = { x: 'Enter', o: 'Esc', lr: '← →', ud: '↑ ↓' };
+const usePad = () => S.padPrompts !== false;
+const glyph = g => usePad() ? `<span class="g">${G[g]}</span>` : `<span class="g wide">${KB[g]}</span>`;
+function refreshGlyphs() {
+  ['pkx', 'skx'].forEach(id => { const e = $('#' + id); e.innerHTML = usePad() ? G.x : KB.x; e.classList.toggle('kbd', !usePad()); });
+  const b = $('#bko'); b.innerHTML = usePad() ? G.o : KB.o; b.classList.toggle('kbd', !usePad());
+}
+refreshGlyphs();
 
 /* ============================== DATA ============================== */
 const CARDS = [
   { id: 'play', title: 'Play', sub: 'Journey through the void.', icon: 'play', kind: 'play' },
-  { id: 'collection', title: 'Collection', sub: 'Hidden relics you have recovered.', icon: 'gem', kind: 'collection' },
   { id: 'general', title: 'General Settings', sub: 'Customize general settings.', icon: 'gear', rows: [
     { type: 'header', label: 'Language & Difficulty' },
     { type: 'choice', key: 'language', label: 'Language', options: ['English', 'Nederlands', 'Deutsch', 'Français', 'Español', '日本語'] },
@@ -956,6 +978,7 @@ const CARDS = [
     { type: 'slider', key: 'shake', label: 'Camera Motion', desc: 'Landing shake, walking bob & menu parallax.', min: 0, max: 100, step: 1, kstep: 5, unit: '%' },
     { type: 'header', label: 'Interface' },
     { type: 'toggle', key: 'tooltips', label: 'Button Hints', desc: 'Show input prompts at the bottom.' },
+    { type: 'toggle', key: 'padPrompts', label: 'Controller Prompts', desc: 'Show PlayStation button icons. Turn off if you only use keyboard and mouse.' },
     { type: 'toggle', key: 'showFps', label: 'Show FPS Counter' },
     { type: 'toggle', key: 'minimap', label: 'Minimap', desc: 'Reveals the maze as you explore.' }
   ]},
@@ -1137,12 +1160,24 @@ tabs.forEach((t, i) => {
     tabs.forEach(x => x.classList.toggle('active', x === t)); placeInd(t); SFX.tab();
     clearTimeout(tabTimer);
     if (i === 1) {
-      const ci = cards.findIndex(c => c.d.kind === 'collection');
-      setFocus(ci);
-      tabTimer = setTimeout(() => { if (mode === 'menu') activate(); tabs.forEach(x => x.classList.toggle('active', x === tabs[0])); placeInd(tabs[0]); }, 260);
+      tabTimer = setTimeout(() => { if (mode === 'menu') openCollection(t); tabs.forEach(x => x.classList.toggle('active', x === tabs[0])); placeInd(tabs[0]); }, 260);
     }
   });
 });
+
+// Collection is only reachable from the top tab: an invisible stand-in card sits over the tab so the panel grows out of it
+const collCard = (() => {
+  const d = { id: 'collection', title: 'Collection', sub: 'Hidden relics you have recovered.', icon: 'gem', kind: 'collection' };
+  const el = h(`<div class="card tab-proxy" data-kind="gem"><h2>${d.title}</h2><div class="icon">${ICONS.gem}</div></div>`);
+  root.appendChild(el);
+  return { d, el, yv: 0, sv: 0 };
+})();
+function openCollection(tab) {
+  const r = tab.getBoundingClientRect();
+  Object.assign(collCard.el.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  vibrate(18);
+  openPanel(collCard);
+}
 
 /* ---------- hints ---------- */
 const HINTS = {
@@ -1155,10 +1190,10 @@ const PAUSE_HINTS = { pad: [['t:△', 'Restart'], ['t:▢', 'Quit Level']], kb: 
 let hintKey = '';
 function setHints(k, force) {
   if (k === hintKey && !force) return; hintKey = k;
-  let list = padConnected ? [...PAD_HINTS[k], ...HINTS[k]] : HINTS[k];
-  if (inGame && k === 'menu') list = [...(padConnected ? PAUSE_HINTS.pad : PAUSE_HINTS.kb), ...list.map(([g, l]) => g === 'o' ? [g, 'Resume'] : [g, l])];
+  let list = padConnected && usePad() ? [...PAD_HINTS[k], ...HINTS[k]] : HINTS[k];
+  if (inGame && k === 'menu') list = [...(padConnected && usePad() ? PAUSE_HINTS.pad : PAUSE_HINTS.kb), ...list.map(([g, l]) => g === 'o' ? [g, 'Resume'] : [g, l])];
   hintsEl.innerHTML = list.map(([g, l], i) => `<div class="hint" style="--i:${i}">${g.startsWith('t:')
-    ? `<span class="g wide">${g.slice(2)}</span>` : `<span class="g">${G[g]}</span>`}${l}</div>`).join('');
+    ? `<span class="g wide">${g.slice(2)}</span>` : glyph(g)}${l}</div>`).join('');
 }
 
 /* ---------- toast ---------- */
@@ -1198,13 +1233,18 @@ const flipFrom = (el, from, scale) => {
 };
 const titleScale = c => parseFloat(getComputedStyle($('h2', c.el)).fontSize) / parseFloat(getComputedStyle(pTitle).fontSize);
 const iconOf = c => $('.icon svg', c.el).getBoundingClientRect();
-const secondary = () => [$('.panel-head'), $('#pSub'), $('.panel-inner > .glow-top')];
+// the top glow bar is centred with a CSS transform, so it must not be animated here (it used to sit off to the right while opening)
+const secondary = () => [$('.panel-head'), $('#pSub')];
 
 function openPanel(c) {
   mode = 'panel'; openCard = c;
   pTitle.textContent = c.d.title; $('#pSub').textContent = c.d.sub; $('#crumb').textContent = c.d.title;
   pIcon.innerHTML = ICONS[c.d.icon];
+  draft = c.d.rows ? { ...S } : null;
+  playView = 'chapters';
   buildRows(c.d);
+  $('#saved').style.visibility = c.d.rows ? '' : 'hidden';
+  if (draft) setDirty(false);
   pContent.scrollTop = 0;
 
   const r = c.el.getBoundingClientRect(), h2r = $('h2', c.el).getBoundingClientRect(), ir = iconOf(c);
@@ -1230,6 +1270,8 @@ function openPanel(c) {
 
 function closePanel() {
   if (mode !== 'panel') return;
+  if (openCard.d.kind === 'play' && !inGame && playView === 'levels') { showChapters(); return; }
+  discardDraft();
   mode = 'closing';
   clearTimeout(openPanel.t);
   stopSearch(true);
@@ -1258,12 +1300,22 @@ function closePanel() {
   }, CLOSE_MS - 30);
 }
 
+let playView = 'chapters', chSel = 0;
+function showChapters() {
+  playView = 'chapters'; SFX.close(); $('#crumb').textContent = 'Play';
+  buildRows(openCard.d); swapIn();
+}
+function enterChapter() {
+  playView = 'levels'; SFX.open(); vibrate(18); $('#crumb').textContent = 'Play › Chapter 1';
+  buildRows(openCard.d); swapIn();
+}
+function swapIn() { pContent.scrollTop = 0; pContent.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.2,.9,.25,1)' }); setHints('panel', true); }
 function buildRows(d) {
   pContent.innerHTML = ''; rows = []; rowFocus = 0;
   let n = 0;
-  const list = d.kind === 'collection' ? [{ type: 'collection' }] : d.kind === 'play' ? (inGame
+  const list = d.kind === 'play' && !inGame && playView === 'chapters' ? [{ type: 'chapters' }] : d.kind === 'collection' ? [{ type: 'collection' }] : d.kind === 'play' ? (inGame
     ? [{ type: 'resume' }, { type: 'action', label: 'Restart Level', fn: () => restartLevel() }, { type: 'action', label: 'Exit to Main Menu', fn: () => exitToMenu() }]
-    : [{ type: 'levels' }, { type: 'start' }]) : [...d.rows, { type: 'reset', keys: d.rows.filter(r => r.key).map(r => r.key) }];
+    : [{ type: 'levels' }, { type: 'start' }]) : [...d.rows, { type: 'apply' }, { type: 'reset', keys: d.rows.filter(r => r.key).map(r => r.key) }];
   list.forEach(def => {
     if (def.type === 'header') {
       const s = h(`<div class="sect" style="--i:${n++}">${def.label}</div>`); pContent.appendChild(s); return;
@@ -1286,9 +1338,24 @@ function setRowFocus(i, fromKey) {
   SFX.hover(i, true);
   if (fromKey) rows[i].el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
-function commit(key) {
-  save(); apply(key);
-  const s = $('#saved'); s.classList.remove('ping'); void s.offsetWidth; s.classList.add('ping');
+// Settings preview live but are only saved when you press Apply; leaving the panel without applying undoes them.
+let draft = null;
+function setDirty(on) {
+  const el = $('#saved'); el.classList.toggle('dirty', on);
+  $('span', el).textContent = on ? 'Unsaved changes · press Apply' : 'No unsaved changes';
+  el.classList.remove('ping'); void el.offsetWidth; el.classList.add('ping');
+  const ap = $('.row.apply', pContent); if (ap) ap.classList.toggle('dirty', on);
+}
+function commit(key) { apply(key); if (draft) setDirty(Object.keys(draft).some(k => draft[k] !== S[k])); }
+function applySettingsNow() {
+  if (!draft || !Object.keys(draft).some(k => draft[k] !== S[k])) { SFX.bump(); return; }
+  save(); draft = { ...S }; setDirty(false); SFX.toggle(true); vibrate(14); toast('Settings applied');
+}
+function discardDraft() {
+  if (!draft) return;
+  const changed = Object.keys(draft).filter(k => draft[k] !== S[k]);
+  if (changed.length) { Object.assign(S, draft); changed.forEach(k => apply(k)); toast('Changes discarded'); }
+  draft = null;
 }
 const label = def => `<div class="rl"><b>${def.label}</b>${def.desc ? `<small>${def.desc}</small>` : ''}</div>`;
 
@@ -1348,21 +1415,44 @@ const ROW = {
     refresh();
     return { el, refresh, adjust: go, press: () => go(1) };
   },
+  apply() {
+    const el = h(`<div class="row reset apply">Apply</div>`);
+    el.addEventListener('click', applySettingsNow);
+    return { el, press: applySettingsNow, adjust: () => SFX.bump() };
+  },
   reset(def) {
     const el = h(`<div class="row reset">Reset to Defaults</div>`);
     const press = () => {
       def.keys.forEach(k => { S[k] = DEFAULTS[k]; });
-      save(); def.keys.forEach(k => apply(k));
+      def.keys.forEach(k => commit(k));
       rows.forEach((r, i) => { r.refresh && r.refresh(); r.el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, { transform: 'translateX(0)' }], { duration: 400, delay: i * 30, easing: 'cubic-bezier(.34,1.56,.64,1)' }); });
-      SFX.reset(); toast('Defaults restored');
+      SFX.reset(); toast('Defaults restored · press Apply to save');
     };
     el.addEventListener('click', press);
     return { el, press, adjust: () => SFX.bump() };
   },
+  chapters() {
+    const done = PROG.best.filter(x => x != null).length, total = LEVEL_INFO.length;
+    const el = h(`<div class="row col"><div class="rl"><b>Select Chapter</b><small>Each chapter is its own journey through the void.</small></div>
+      <div class="ch-grid">
+        <div class="ch-card"><span class="ch-num">CHAPTER 1</span><b>The Aurora</b><small>${total} levels · ${done}/${total} cleared · ◆ ${relicFound()}/${relicTotal()}</small><div class="ch-bar"><i style="width:${done / total * 100}%"></i></div></div>
+        <div class="ch-card soon"><span class="ch-badge">COMING SOON</span><span class="ch-num">CHAPTER 2</span><b>???</b><small>A new journey is on its way.</small></div>
+      </div></div>`);
+    const tiles = $$('.ch-card', el);
+    const refresh = () => tiles.forEach((t, i) => t.classList.toggle('sel', i === chSel));
+    const soon = () => { SFX.bump(); toast('Chapter 2 is coming soon'); };
+    const pick = i => { if (i < 0 || i > 1) { SFX.bump(); return; } if (i !== chSel) { chSel = i; refresh(); SFX.change(i ? 1 : -1); } };
+    tiles.forEach((t, i) => {
+      t.addEventListener('click', e => { e.stopPropagation(); pick(i); if (i === 0) enterChapter(); else soon(); });
+      t.addEventListener('pointerenter', () => SFX.hover(i + 2, true));
+    });
+    refresh();
+    return { el, refresh, adjust: d => pick(chSel + d), press: () => chSel === 0 ? enterChapter() : soon() };
+  },
   levels() {
     S.level = clamp(S.level || 0, 0, PROG.unlocked - 1);
     const diffBars = i => Array.from({ length: 6 }, (_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('');
-    const el = h(`<div class="row col"><div class="rl"><b>Select Level</b><small>Collect the 3 star shards, wake the portal. Relics are hidden off the main path.</small></div>
+    const el = h(`<div class="row col"><div class="rl"><b>Chapter 1 · Select Level</b><small>Collect the 3 star shards, wake the portal. Relics are hidden off the main path.</small></div>
       <div class="lv-grid">${LEVEL_INFO.map((l, i) => {
         const locked = i >= PROG.unlocked, rel = (PROG.relics[i] || []).filter(Boolean).length, md = PROG.medal[i];
         return `<div class="lvl-card${locked ? ' locked' : ''}"><canvas></canvas>
@@ -1723,6 +1813,7 @@ function apply(key) {
   if (G3) G3.applySettings(S);
   $('#fps').style.display = S.showFps ? 'block' : 'none';
   hintsEl.classList.toggle('hide', !S.tooltips);
+  if (key === 'padPrompts') { refreshGlyphs(); if (hintKey) setHints(hintKey, true); }
   const br = $('#bright'), b = S.brightness;
   if (b < 100) { br.style.background = '#000'; br.style.mixBlendMode = 'normal'; br.style.opacity = (100 - b) / 100 * .85; }
   else { br.style.background = '#fff'; br.style.mixBlendMode = 'soft-light'; br.style.opacity = (b - 100) / 100 * .9; }

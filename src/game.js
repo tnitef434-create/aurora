@@ -302,7 +302,7 @@ export async function createGame(opts) {
   function message(text, secs = 3) { H.msg.textContent = text; H.msg.classList.remove('show'); void H.msg.offsetWidth; H.msg.classList.add('show'); msgTimer = secs; }
   function fade(to, ms = 350) { H.fade.style.transition = `opacity ${ms}ms ease`; H.fade.style.opacity = to; return new Promise(r => setTimeout(r, ms)); }
   function renderHints() {
-    const p = !!getPad();
+    const p = showPad();
     const k = p
       ? [['L', T('move')], ['R', T('look')], ['✕', T('jump')], ['R2', T('sprint')], ['Touchpad', 'Records'], ['☰', T('pause')]]
       : [['WASD', T('move')], ['Mouse', T('look')], ['Space', T('jump')], ['Shift', T('sprint')], ['Tab', 'Records'], ['Esc', T('pause')]];
@@ -641,6 +641,8 @@ export async function createGame(opts) {
   addEventListener('wheel', e => { if (running && !paused) cam.dist = clamp(cam.dist + Math.sign(e.deltaY) * .8, 5, 16); }, { passive: true });
   addEventListener('blur', () => { if (running && !paused && state === 'playing') pause(); });
 
+  // controller icons are only shown when a pad is connected and Controller Prompts is on
+  const showPad = () => !!getPad() && S.padPrompts !== false;
   const getPad = () => { const ps = navigator.getGamepads ? navigator.getGamepads() : []; for (const p of ps) if (p && p.connected) return p; return null; };
   let padPrev = [];
   function rumble(ms, strong, weak) {
@@ -890,7 +892,7 @@ export async function createGame(opts) {
     H.complete.querySelector('.g-stats').innerHTML =
       `<div><span>${T('time')}</span><b>${fmtTime(time)}</b></div><div><span>${T('par')}</span><b>${fmtTime(L.def.par)}</b></div><div><span>${T('best')}</span><b>${fmtTime(res.best ?? time)}</b></div><div><span>${T('relics')}</span><b>◆ ${found}/${L.relics.length}</b></div>` +
       (res.newBest ? `<em>${T('newBest')}</em>` : '') + (last ? `<p>${T('finalS')}</p>` : '');
-    const padNow = !!getPad();
+    const padNow = showPad();
     H.complete.querySelector('[data-a="next"]').innerHTML = `<span class="gk">${padNow ? '✕' : 'Enter'}</span>${T('cont')}`;
     H.complete.querySelector('[data-a="menu"]').innerHTML = `<span class="gk">${padNow ? '○' : 'Esc'}</span>${T('menu')}`;
     setCFocus(1, true);
@@ -1083,7 +1085,7 @@ export async function createGame(opts) {
       const d = s.obj.position.distanceTo(head);
       if (S.autoPick ? d < 1.6 : d < 2.4) {
         if (S.autoPick || interactPressed) collectShard(s);
-        else prompt = `<b>${getPad() ? '▢' : 'E'}</b>${T('collect')}`;
+        else prompt = `<b>${showPad() ? '▢' : 'E'}</b>${T('collect')}`;
       }
     }
     for (const rl of L.relics) {
@@ -1091,7 +1093,7 @@ export async function createGame(opts) {
       const d = rl.obj.position.distanceTo(head);
       if (S.autoPick ? d < 1.6 : d < 2.4) {
         if (S.autoPick || interactPressed) collectRelic(rl);
-        else prompt = `<b>${getPad() ? '▢' : 'E'}</b>${T('collect')}`;
+        else prompt = `<b>${showPad() ? '▢' : 'E'}</b>${T('collect')}`;
       }
     }
     interactPressed = false;
@@ -1263,7 +1265,7 @@ export async function createGame(opts) {
   const medalDot = m => m ? `<i class="ov-medal ${m}"></i>` : '';
   function renderOverlay() {
     const prog = (getProgress && getProgress()) || {};
-    hud.querySelector('.ov-keys').innerHTML = getPad()
+    hud.querySelector('.ov-keys').innerHTML = showPad()
       ? `<b>L1</b><b>R1</b> Switch <span></span><b>Touchpad</b> Close`
       : `<b>←</b><b>→</b> Switch <span></span><b>Tab</b> Close`;
     hud.querySelectorAll('.ov-tabs button').forEach(b => b.classList.toggle('on', +b.dataset.t === ov.tab));
@@ -1396,6 +1398,7 @@ export async function createGame(opts) {
   function applySettings(s) {
     const prevDiff = S.difficulty;
     S = { ...s };
+    renderHints();
     const q = QUALITY[S.quality] || QUALITY.High;
     renderer.toneMappingExposure = Math.pow(S.brightness / 100, 1.3) * .95;
     renderer.shadowMap.enabled = q.shadows > 0;
