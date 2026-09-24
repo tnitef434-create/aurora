@@ -51,12 +51,12 @@ const damp = (a, b, rate, dt) => lerp(a, b, 1 - Math.exp(-rate * dt));
 
 /* ------------------------------------------------------------------ strings */
 const STR = {
-  English: { level: 'Level', shards: 'Star shards', collect: 'Collect', locked: 'Collect every star shard to wake the portal', awake: 'The portal has awakened', got: 'Star shard found', complete: 'Level Complete', time: 'Time', best: 'Best', cont: 'Continue', menu: 'Main Menu', fell: 'Lost in the void…', dead: 'Your light went out…', click: 'Click to take control', finalT: 'You reached the Heart', finalS: 'Thanks for playing Aurora.', newBest: 'New best!', move: 'Move', jump: 'Jump', sprint: 'Sprint', look: 'Look', pause: 'Pause', relic: 'Relic found', relics: 'Relics', medal: 'Medal', gold: 'Gold', silver: 'Silver', bronze: 'Bronze', par: 'Par' },
-  Nederlands: { level: 'Level', shards: 'Sterscherven', collect: 'Oppakken', locked: 'Verzamel alle sterscherven om het portaal te wekken', awake: 'Het portaal is ontwaakt', got: 'Sterscherf gevonden', complete: 'Level voltooid', time: 'Tijd', best: 'Beste', cont: 'Doorgaan', menu: 'Hoofdmenu', fell: 'Verdwaald in de leegte…', dead: 'Je licht is gedoofd…', click: 'Klik om te spelen', finalT: 'Je hebt het Hart bereikt', finalS: 'Bedankt voor het spelen van Aurora.', newBest: 'Nieuw record!', move: 'Lopen', jump: 'Springen', sprint: 'Sprinten', look: 'Kijken', pause: 'Pauze', relic: 'Relikwie gevonden', relics: 'Relikwieën', medal: 'Medaille', gold: 'Goud', silver: 'Zilver', bronze: 'Brons', par: 'Par' },
-  Deutsch: { level: 'Level', shards: 'Sternsplitter', collect: 'Aufheben', locked: 'Sammle alle Sternsplitter, um das Portal zu wecken', awake: 'Das Portal ist erwacht', got: 'Sternsplitter gefunden', complete: 'Level geschafft', time: 'Zeit', best: 'Bestzeit', cont: 'Weiter', menu: 'Hauptmenü', fell: 'In der Leere verloren…', dead: 'Dein Licht ist erloschen…', click: 'Klicken zum Spielen', finalT: 'Du hast das Herz erreicht', finalS: 'Danke fürs Spielen von Aurora.', newBest: 'Neue Bestzeit!', move: 'Laufen', jump: 'Springen', sprint: 'Sprinten', look: 'Umsehen', pause: 'Pause', relic: 'Relikt gefunden', relics: 'Relikte', medal: 'Medaille', gold: 'Gold', silver: 'Silber', bronze: 'Bronze', par: 'Par' },
-  'Français': { level: 'Niveau', shards: 'Éclats d’étoile', collect: 'Ramasser', locked: 'Récupère tous les éclats pour éveiller le portail', awake: 'Le portail s’est éveillé', got: 'Éclat d’étoile trouvé', complete: 'Niveau terminé', time: 'Temps', best: 'Record', cont: 'Continuer', menu: 'Menu principal', fell: 'Perdu dans le vide…', dead: 'Ta lumière s’est éteinte…', click: 'Clique pour jouer', finalT: 'Tu as atteint le Cœur', finalS: 'Merci d’avoir joué à Aurora.', newBest: 'Nouveau record !', move: 'Bouger', jump: 'Sauter', sprint: 'Sprinter', look: 'Regarder', pause: 'Pause', relic: 'Relique trouvée', relics: 'Reliques', medal: 'Médaille', gold: 'Or', silver: 'Argent', bronze: 'Bronze', par: 'Par' },
-  'Español': { level: 'Nivel', shards: 'Fragmentos estelares', collect: 'Recoger', locked: 'Reúne todos los fragmentos para despertar el portal', awake: 'El portal ha despertado', got: 'Fragmento encontrado', complete: 'Nivel completado', time: 'Tiempo', best: 'Récord', cont: 'Continuar', menu: 'Menú principal', fell: 'Perdido en el vacío…', dead: 'Tu luz se apagó…', click: 'Haz clic para jugar', finalT: 'Has llegado al Corazón', finalS: 'Gracias por jugar a Aurora.', newBest: '¡Nuevo récord!', move: 'Mover', jump: 'Saltar', sprint: 'Correr', look: 'Mirar', pause: 'Pausa', relic: 'Reliquia encontrada', relics: 'Reliquias', medal: 'Medalla', gold: 'Oro', silver: 'Plata', bronze: 'Bronce', par: 'Par' },
-  '日本語': { level: 'レベル', shards: '星のかけら', collect: '拾う', locked: '星のかけらを全部集めてポータルを目覚めさせよう', awake: 'ポータルが目覚めた', got: '星のかけらを見つけた', complete: 'レベルクリア', time: 'タイム', best: 'ベスト', cont: '続ける', menu: 'メインメニュー', fell: '虚空に迷い込んだ…', dead: '光が消えた…', click: 'クリックして操作', finalT: 'オーロラの心に到達した', finalS: 'Auroraをプレイしてくれてありがとう。', newBest: '自己ベスト！', move: '移動', jump: 'ジャンプ', sprint: 'ダッシュ', look: '視点', pause: 'ポーズ', relic: '遺物を発見', relics: '遺物', medal: 'メダル', gold: '金', silver: '銀', bronze: '銅', par: '目標' },
+  English: { level: 'Level', shards: 'Star shards', collect: 'Collect', locked: 'Collect every star shard to wake the portal', awake: 'The portal has awakened', got: 'Star shard found', complete: 'Level Complete', time: 'Time', best: 'Best', cont: 'Continue', menu: 'Main Menu', fell: 'Lost in the void…', dead: 'Your light went out…', click: 'Click to take control', finalT: 'Chapter 1 complete', finalS: 'Thanks for playing Aurora.', newBest: 'New best!', move: 'Move', jump: 'Jump', sprint: 'Sprint', look: 'Look', pause: 'Pause', relic: 'Relic found', relics: 'Relics', medal: 'Medal', gold: 'Gold', silver: 'Silver', bronze: 'Bronze', par: 'Par' },
+  Nederlands: { level: 'Level', shards: 'Sterscherven', collect: 'Oppakken', locked: 'Verzamel alle sterscherven om het portaal te wekken', awake: 'Het portaal is ontwaakt', got: 'Sterscherf gevonden', complete: 'Level voltooid', time: 'Tijd', best: 'Beste', cont: 'Doorgaan', menu: 'Hoofdmenu', fell: 'Verdwaald in de leegte…', dead: 'Je licht is gedoofd…', click: 'Klik om te spelen', finalT: 'Hoofdstuk 1 voltooid', finalS: 'Bedankt voor het spelen van Aurora.', newBest: 'Nieuw record!', move: 'Lopen', jump: 'Springen', sprint: 'Sprinten', look: 'Kijken', pause: 'Pauze', relic: 'Relikwie gevonden', relics: 'Relikwieën', medal: 'Medaille', gold: 'Goud', silver: 'Zilver', bronze: 'Brons', par: 'Par' },
+  Deutsch: { level: 'Level', shards: 'Sternsplitter', collect: 'Aufheben', locked: 'Sammle alle Sternsplitter, um das Portal zu wecken', awake: 'Das Portal ist erwacht', got: 'Sternsplitter gefunden', complete: 'Level geschafft', time: 'Zeit', best: 'Bestzeit', cont: 'Weiter', menu: 'Hauptmenü', fell: 'In der Leere verloren…', dead: 'Dein Licht ist erloschen…', click: 'Klicken zum Spielen', finalT: 'Kapitel 1 abgeschlossen', finalS: 'Danke fürs Spielen von Aurora.', newBest: 'Neue Bestzeit!', move: 'Laufen', jump: 'Springen', sprint: 'Sprinten', look: 'Umsehen', pause: 'Pause', relic: 'Relikt gefunden', relics: 'Relikte', medal: 'Medaille', gold: 'Gold', silver: 'Silber', bronze: 'Bronze', par: 'Par' },
+  'Français': { level: 'Niveau', shards: 'Éclats d’étoile', collect: 'Ramasser', locked: 'Récupère tous les éclats pour éveiller le portail', awake: 'Le portail s’est éveillé', got: 'Éclat d’étoile trouvé', complete: 'Niveau terminé', time: 'Temps', best: 'Record', cont: 'Continuer', menu: 'Menu principal', fell: 'Perdu dans le vide…', dead: 'Ta lumière s’est éteinte…', click: 'Clique pour jouer', finalT: 'Chapitre 1 terminé', finalS: 'Merci d’avoir joué à Aurora.', newBest: 'Nouveau record !', move: 'Bouger', jump: 'Sauter', sprint: 'Sprinter', look: 'Regarder', pause: 'Pause', relic: 'Relique trouvée', relics: 'Reliques', medal: 'Médaille', gold: 'Or', silver: 'Argent', bronze: 'Bronze', par: 'Par' },
+  'Español': { level: 'Nivel', shards: 'Fragmentos estelares', collect: 'Recoger', locked: 'Reúne todos los fragmentos para despertar el portal', awake: 'El portal ha despertado', got: 'Fragmento encontrado', complete: 'Nivel completado', time: 'Tiempo', best: 'Récord', cont: 'Continuar', menu: 'Menú principal', fell: 'Perdido en el vacío…', dead: 'Tu luz se apagó…', click: 'Haz clic para jugar', finalT: 'Capítulo 1 completado', finalS: 'Gracias por jugar a Aurora.', newBest: '¡Nuevo récord!', move: 'Mover', jump: 'Saltar', sprint: 'Correr', look: 'Mirar', pause: 'Pausa', relic: 'Reliquia encontrada', relics: 'Reliquias', medal: 'Medalla', gold: 'Oro', silver: 'Plata', bronze: 'Bronce', par: 'Par' },
+  '日本語': { level: 'レベル', shards: '星のかけら', collect: '拾う', locked: '星のかけらを全部集めてポータルを目覚めさせよう', awake: 'ポータルが目覚めた', got: '星のかけらを見つけた', complete: 'レベルクリア', time: 'タイム', best: 'ベスト', cont: '続ける', menu: 'メインメニュー', fell: '虚空に迷い込んだ…', dead: '光が消えた…', click: 'クリックして操作', finalT: 'チャプター1 クリア', finalS: 'Auroraをプレイしてくれてありがとう。', newBest: '自己ベスト！', move: '移動', jump: 'ジャンプ', sprint: 'ダッシュ', look: '視点', pause: 'ポーズ', relic: '遺物を発見', relics: '遺物', medal: 'メダル', gold: '金', silver: '銀', bronze: '銅', par: '目標' },
 };
 
 const QUALITY = {
@@ -419,7 +419,7 @@ export async function createGame(opts) {
       }
       if (ch === 'H') {
         const idx = relicIdx++, had = !!saved[idx];
-        const gIdx = Math.min(i * 2 + idx, 11);
+        const gIdx = def.relicIds ? def.relicIds[idx] : Math.min(i * 2 + idx, 11);
         const o = cloneModel('relic_' + gIdx, had ? { '*': 'RelicGhost' } : {});
         o.scale.setScalar(1.25);
         o.position.set(p.x, 1.3, p.z);
@@ -449,7 +449,7 @@ export async function createGame(opts) {
         beam.add(new THREE.Mesh(g1, bm), new THREE.Mesh(g2, bcore));
         const l = new THREE.PointLight(0xff3348, 5, 9, 2); beam.add(l);
         L.group.add(beam);
-        L.lasers.push({ obj: o, beam, pos: p.clone(), len, angle: rnd() * 6.28, speed: (.95 + i * .09) * (L.lasers.length % 2 ? -1 : 1) });
+        L.lasers.push({ obj: o, beam, pos: p.clone(), len, angle: rnd() * 6.28, speed: (.95 + i * .09) * (def.hazard || 1) * (L.lasers.length % 2 ? -1 : 1) });
       }
       if (ch === 'D') {
         // patrol the longest straight run of walkable cells through this spot
@@ -459,7 +459,7 @@ export async function createGame(opts) {
         const A_ = horiz ? cellPos(r, c - h1) : cellPos(r - v1, c), B_ = horiz ? cellPos(r, c + h2) : cellPos(r + v2, c);
         const o = cloneModel('drone'); o.position.set(p.x, 1.1, p.z); L.group.add(o);
         const light = new THREE.PointLight(0xff3348, 4, 7, 2); o.add(light);
-        L.drones.push({ obj: o, a: A_, b: B_, pos: p.clone().setY(1.1), t: A_.distanceTo(p) / Math.max(A_.distanceTo(B_), .01), dir: 1, len: Math.max(A_.distanceTo(B_), .01), speed: 3 + i * .3 });
+        L.drones.push({ obj: o, a: A_, b: B_, pos: p.clone().setY(1.1), t: A_.distanceTo(p) / Math.max(A_.distanceTo(B_), .01), dir: 1, len: Math.max(A_.distanceTo(B_), .01), speed: (3 + i * .3) * (def.hazard || 1) });
       }
       if (ch === 'E') {
         const o = cloneModel('portal'); o.position.copy(p);
@@ -741,7 +741,7 @@ export async function createGame(opts) {
   let running = false, paused = false, state = 'playing', time = 0, completeAt = 0;
   let lastT = performance.now(), lastRender = 0, fpsAcc = 0, fpsN = 0;
 
-  function maxHearts() { return HEARTS[S.difficulty] || 3; }
+  function maxHearts() { return Math.min(HEARTS[S.difficulty] || 3, (L && L.def.hearts) || 99); }
   function updateHearts(pop) {
     const m = maxHearts();
     H.hearts.innerHTML = Array.from({ length: m }, (_, i) => `<i class="${i < P.hearts ? 'on' : ''}${pop === i ? ' lost' : ''}"></i>`).join('');
@@ -1322,7 +1322,7 @@ export async function createGame(opts) {
       if (got) found++;
       const col = `rgb(${(l.palette.aur || [.3, 1, .7]).map(v => v * 255 | 0).join(',')})`;
       return `<div class="ov-relic${got ? ' got' : ''}${li === levelIndex ? ' here' : ''}" style="--c:${col};--d:${(k++) * 30}ms">
-        <div class="ov-ricon"><img src="relics/relic_${li * 2 + j}.png" alt=""></div>
+        <div class="ov-ricon"><img src="relics/relic_${l.relicIds ? l.relicIds[j] : li * 2 + j}.png" alt=""></div>
         <b>${got ? name : '???'}</b><small>${String(li + 1).padStart(2, '0')} · ${l.name}</small></div>`;
     }).join('')).join('');
     const pct = total ? found / total : 0;

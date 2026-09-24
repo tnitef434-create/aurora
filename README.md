@@ -10,10 +10,11 @@ Get the latest **Aurora-win64.zip** from [Releases](../../releases). Unzip it an
 
 ## Features
 
-- 6 levels: The Drift, Nebula Gardens, The Core, Shattered Halo, Laser Garden, Aurora's Heart
+- 7 levels: The Drift, Nebula Gardens, The Core, Shattered Halo, Laser Garden, Aurora's Heart and **Level Impossible**
+- Level Impossible (v1.5, the final update of Chapter 1): the biggest map yet (25×25), packed with lasers, spike traps, drones and crumbling tiles, faster hazards and only 2 hearts
 - Hazards: patrol drones, rotating lasers, spike traps, crumbling tiles, moving platforms and bounce pads
 - Hearts, par times and gold/silver/bronze medals
-- 12 hidden relics, each with its own design, saved to your Collection
+- 14 hidden relics, each with its own design, saved to your Collection
 - In-game Records screen with your best, average, last 10 runs, deaths and more
 - Full PS5 DualSense / controller support with rumble
 - Settings that affect the game: difficulty, graphics quality, FOV, sensitivity, volumes and more

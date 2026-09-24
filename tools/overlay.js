@@ -91,7 +91,7 @@
       if (got) found++;
       const col = `rgb(${(l.palette.aur || [.3, 1, .7]).map(v => v * 255 | 0).join(',')})`;
       return `<div class="ov-relic${got ? ' got' : ''}${li === levelIndex ? ' here' : ''}" style="--c:${col};--d:${(k++) * 30}ms">
-        <div class="ov-ricon"><img src="relics/relic_${li * 2 + j}.png" alt=""></div>
+        <div class="ov-ricon"><img src="relics/relic_${l.relicIds ? l.relicIds[j] : li * 2 + j}.png" alt=""></div>
         <b>${got ? name : '???'}</b><small>${String(li + 1).padStart(2, '0')} · ${l.name}</small></div>`;
     }).join('')).join('');
     const pct = total ? found / total : 0;
