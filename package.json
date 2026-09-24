@@ -1,7 +1,7 @@
 {
   "name": "aurora",
   "productName": "Aurora",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Aurora — a space maze game",
   "main": "main.js",
   "scripts": {
@@ -43,25 +43,18 @@
           "arch": [
             "x64"
           ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
         }
       ]
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
+      "oneClick": true,
+      "perMachine": false,
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "shortcutName": "Aurora",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
       "artifactName": "Aurora-Setup.exe"
-    },
-    "portable": {
-      "artifactName": "Aurora.exe"
     }
   }
 }
