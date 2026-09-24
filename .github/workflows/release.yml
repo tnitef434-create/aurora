@@ -3,6 +3,11 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag to release, e.g. v1.5.0'
+        required: true
 
 permissions:
   contents: write
@@ -25,7 +30,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${GITHUB_REF_NAME}"
+          TAG="${{ inputs.tag || github.ref_name }}"
           NOTES="notes/${TAG}.md"
           [ -f "$NOTES" ] || NOTES=/dev/null
-          gh release create "$TAG" Aurora-win64.zip --title "Aurora ${TAG#v}" --notes-file "$NOTES" --latest
+          gh release create "$TAG" Aurora-win64.zip --title "Aurora ${TAG#v}" --notes-file "$NOTES" --latest --target "$GITHUB_SHA"
