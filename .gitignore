@@ -3,3 +3,4 @@ dist/
 preview/
 *.log
 game.bundle.js
+web/

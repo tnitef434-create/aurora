@@ -4,7 +4,7 @@ A dreamy third-person space-maze game. Guide a small astronaut across floating c
 
 ## Play
 
-Download **Aurora-Setup.exe** from [Releases](../../releases) and run it. It installs Aurora with a desktop shortcut, and running a newer one updates your game in place.
+Play it free in your browser, exclusively on **[Unpaused](https://unpaused.online/aurora/)**, or download **Aurora-Setup.exe** from [Releases](../../releases) and run it. It installs Aurora with a desktop shortcut, and running a newer one updates your game in place.
 
 > Windows may show "Windows protected your PC" because the game isn't code-signed. Click **More info → Run anyway**.
 

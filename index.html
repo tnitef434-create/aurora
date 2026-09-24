@@ -795,7 +795,7 @@ body.ingame #root{display:none}
     <div class="modal">
       <div class="glow-top"></div>
       <h3>Quit Game?</h3>
-      <p>Are you sure you want to exit to desktop?</p>
+      <p id="quitMsg">Are you sure you want to exit to desktop?</p>
       <div class="mbtns"><button class="mbtn" data-a="cancel">Cancel</button><button class="mbtn" data-a="quit">Quit</button></div>
     </div>
   </div>
@@ -820,6 +820,11 @@ body.ingame #root{display:none}
 (() => {
 'use strict';
 const $ = (s, r = document) => r.querySelector(s);
+// Played in a browser on Unpaused (not the Windows app): quitting returns to the hub
+// the desktop app exposes window.game = { quit, setFullscreen }; in a browser, window.game is just the #game element
+const DESKTOP = !!(window.game && typeof window.game.quit === 'function');
+const IS_WEB = !DESKTOP && /^https?:$/.test(location.protocol);
+if (IS_WEB) { const m = document.getElementById('quitMsg'); if (m) m.textContent = 'Leave Aurora and go back to Unpaused?'; }
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -829,7 +834,7 @@ const h = html => { const t = document.createElement('template'); t.innerHTML = 
 const DEFAULTS = {
   master: 80, music: 45, sfx: 90, hoverSfx: true, uiSound: 'Clicks', padPrompts: true, countdown: false,
   language: 'English', region: 'Auto', tooltips: true, sprint: false, shake: 50, showFps: false, autoPick: true,
-  window: window.game ? 'Fullscreen' : 'Windowed', res: '1920 × 1080', brightness: 100, uiScale: 100, fpsCap: '144', motionBlur: false, reduceMotion: false,
+  window: DESKTOP ? 'Fullscreen' : 'Windowed', res: '1920 × 1080', brightness: 100, uiScale: 100, fpsCap: '144', motionBlur: false, reduceMotion: false,
   sensX: 6.5, sensY: 6.5, invert: false, vibration: true, deadzone: 12, mode: 0,
   difficulty: 'Normal', minimap: true, quality: 'High', fov: 75, level: 0
 };
@@ -1841,7 +1846,8 @@ function modalAction() {
   mode = 'quit'; Music.update();
   A.tone({ f: 392, to: 98, dur: 1.4, vol: .12, send: .8 }); A.noise({ dur: 1.2, from: 5000, to: 120, vol: .06, send: .7 });
   const q = $('#quit'); q.classList.add('show'); void q.offsetWidth; q.classList.add('on');
-  if (window.game) setTimeout(() => window.game.quit(), 2200);   // desktop app: actually exit after the goodbye screen
+  if (DESKTOP) setTimeout(() => window.game.quit(), 2200);   // desktop app: actually exit after the goodbye screen
+  else if (IS_WEB) setTimeout(() => location.assign('/'), 1600);   // web (Unpaused): back to the games hub
 }
 mbtns.forEach((b, i) => {
   b.addEventListener('pointerenter', () => { if (mFocus !== i) setMFocus(i); });
@@ -2020,7 +2026,7 @@ function apply(key) {
   if (key === 'music') Music.update();
   if (key === 'window' && S.window !== lastWindow) {
     lastWindow = S.window;
-    if (window.game) { window.game.setFullscreen(S.window === 'Fullscreen'); return; }
+    if (DESKTOP) { window.game.setFullscreen(S.window === 'Fullscreen'); return; }
     try {
       if (S.window === 'Fullscreen' && !document.fullscreenElement) document.documentElement.requestFullscreen();
       else if (S.window === 'Windowed' && document.fullscreenElement) document.exitFullscreen();
@@ -2031,7 +2037,7 @@ document.addEventListener('fullscreenchange', () => {
   const fs = document.fullscreenElement ? 'Fullscreen' : 'Windowed';
   if (S.window !== fs) { S.window = lastWindow = fs; save(); rows.forEach(r => r.refresh && r.refresh()); }
 });
-if (window.game) { if (S.window === 'Windowed') window.game.setFullscreen(false); }   // desktop app starts fullscreen
+if (DESKTOP) { if (S.window === 'Windowed') window.game.setFullscreen(false); }   // desktop app starts fullscreen
 else S.window = document.fullscreenElement ? 'Fullscreen' : 'Windowed';
 lastWindow = S.window;
 apply();
@@ -2241,7 +2247,7 @@ body.ingame .update{display:none}
 // Update notice: compares this build's version with the latest GitHub release and offers the download.
 (() => {
   const cur = window.AuroraGame && window.AuroraGame.version;
-  if (!cur || !window.fetch) return;
+  if (!cur || !window.fetch || !(window.game && window.game.quit)) return;   // only the desktop app needs updating; the web version is always current
   const newer = (a, b) => { const x = a.split('.').map(Number), y = b.split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); return false; };
   fetch('https://api.github.com/repos/tnitef434-create/aurora/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
     .then(r => r.ok ? r.json() : null).then(rel => {
