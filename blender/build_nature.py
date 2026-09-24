@@ -374,43 +374,76 @@ def thorns():
 # ---------------------------------------------------------------- insect enemy (body + two separate wings for flapping)
 def insect():
     reset(); m = M()
+
+    def pivot(o, at):
+        """Move an object's origin to a joint so the engine can rotate it there."""
+        bpy.context.scene.cursor.location = at
+        activate(o); bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+        return o
+
+    def smooth_mod(o, lv=1):
+        sm = o.modifiers.new('sm', 'SUBSURF'); sm.levels = sm.render_levels = lv
+        apply_all(o)
+        for pl in o.data.polygons: pl.use_smooth = True
+        return o
+
+    # body faces -Y (head at -Y, abdomen at +Y); smooth, rounded shapes
     parts = []
-    # abdomen with segment bands, thorax, head (facing -Y like the drone)
-    ab = sphere(.34, (0, .36, 0), (.85, 1.25, .8), seg=20, rings=12); give(ab, m['carapace'], True); parts.append(ab)
-    for i in range(3):
-        b = torus(.27 - i * .05, .035, (0, .22 + i * .2, 0), rot=(R(90), 0, 0), maj=20); b.scale = (1, 1, .95)
-        give(b, m['carapace2'], True); parts.append(b)
-    sting = cone(.07, 0, .3, (0, .82, -.04), v=8, rot=(R(-95), 0, 0)); give(sting, m['eye']); parts.append(sting)
-    th = sphere(.2, (0, -.06, .03), (1, 1.05, .9), seg=16, rings=8); give(th, m['carapace2'], True); parts.append(th)
-    hd = sphere(.17, (0, -.32, .05), (1.05, .95, .9), seg=16, rings=8); give(hd, m['carapace'], True); parts.append(hd)
+    th = sphere(.2, (0, -.06, .04), (1, 1.1, .92), seg=32, rings=16); give(th, m['carapace2'], True); parts.append(th)
+    collar = torus(.15, .03, (0, -.2, .05), rot=(R(90), 0, 0), maj=32, mn=10); give(collar, m['carapace'], True); parts.append(collar)
+    hd = sphere(.165, (0, -.33, .06), (1.05, .95, .92), seg=32, rings=16); give(hd, m['carapace'], True); parts.append(hd)
     for sx in (-1, 1):
-        e = sphere(.09, (sx * .12, -.39, .09), (1, 1.1, 1.2), seg=14, rings=8); give(e, m['eye'], True); parts.append(e)
-        md = cone(.035, 0, .16, (sx * .06, -.49, -.03), v=5, rot=(R(80), 0, sx * R(-25))); give(md, m['leg']); parts.append(md)
-        ant = tube([(sx * .06, -.42, .17), (sx * .14, -.55, .36), (sx * .26, -.62, .42)], .014, .008, v=4); give(ant, m['leg'], True); parts.append(ant)
-        tip = sphere(.025, (sx * .26, -.62, .42), seg=8, rings=4); give(tip, m['eye']); parts.append(tip)
-        for k, yy in enumerate((-.14, -.04, .06)):
-            spread = (k - 1) * .35
-            lp = [(sx * .15, yy, -.04), (sx * .34, yy + spread * .3, .08), (sx * .46, yy + spread * .6, -.22), (sx * .5, yy + spread * .7, -.36)]
-            lg = tube(lp, .022, .012, v=4); give(lg, m['leg'], True); parts.append(lg)
+        e = sphere(.095, (sx * .115, -.4, .1), (1, 1.1, 1.2), seg=24, rings=12); give(e, m['eye'], True); parts.append(e)
+        md = tube([(sx * .05, -.46, -.02), (sx * .09, -.53, -.05), (sx * .04, -.58, -.07)], .03, .006, v=8); smooth_mod(md); give(md, m['leg'], True); parts.append(md)
+        ant = tube([(sx * .06, -.43, .18), (sx * .12, -.54, .33), (sx * .2, -.62, .42), (sx * .28, -.64, .44)], .014, .007, v=8); smooth_mod(ant); give(ant, m['leg'], True); parts.append(ant)
+        tip = sphere(.024, (sx * .28, -.64, .44), seg=12, rings=6); give(tip, m['eye'], True); parts.append(tip)
     body = join(parts); body.name = 'Body'
-    # wings: pivot at the root (object origin), veins as thin ridges
+    # abdomen: separate so it can pulse and curl, pivot where it meets the thorax
+    ab_parts = []
+    ab = sphere(.32, (0, .38, -.02), (.82, 1.25, .78), seg=32, rings=16); give(ab, m['carapace'], True); ab_parts.append(ab)
+    for i in range(4):
+        y = .2 + i * .15; rr = .26 - abs(i - 1.2) * .045
+        bnd = torus(rr, .022, (0, y, -.02), rot=(R(90), 0, 0), maj=40, mn=10); give(bnd, m['carapace2'], True); ab_parts.append(bnd)
+    sting = tube([(0, .74, -.06), (0, .86, -.1), (0, .93, -.17)], .045, .004, v=10); smooth_mod(sting); give(sting, m['eye'], True); ab_parts.append(sting)
+    abd = join(ab_parts); abd.name = 'Abdomen'; pivot(abd, (0, .1, 0))
+    # legs: one object per side, pivot at the hips so they can swing and tuck
+    legs = []
+    for sx, name in ((-1, 'LegsL'), (1, 'LegsR')):
+        lp_ = []
+        for k, yy in enumerate((-.14, -.05, .04)):
+            spread = (k - 1) * .35
+            pts = [(sx * .13, yy, -.03), (sx * .3, yy + spread * .25, .06), (sx * .42, yy + spread * .55, -.16), (sx * .47, yy + spread * .7, -.34)]
+            lg = tube(pts, .024, .01, v=8); smooth_mod(lg); give(lg, m['leg'], True); lp_.append(lg)
+            ft = sphere(.022, pts[-1], seg=10, rings=5); give(ft, m['leg'], True); lp_.append(ft)
+        lgo = join(lp_); lgo.name = name; pivot(lgo, (sx * .13, -.05, -.03)); legs.append(lgo)
+    # two pairs of veined wings, pivots at the roots
     wings = []
-    for sx, name in ((1, 'WingR'), (-1, 'WingL')):
-        bm = bmesh.new()
-        outline = []
-        for i in range(14):
-            t = i / 13 * math.pi
-            outline.append(bm.verts.new((sx * (.05 + .62 * math.sin(t) ** .8), .5 * (1 - math.cos(t)) * .5 - .05 + .1 * math.sin(t), 0)))
-        bm.faces.new(outline if sx > 0 else list(reversed(outline)))
-        me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
-        w = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(w)
-        s = w.modifiers.new('sol', 'SOLIDIFY'); s.thickness = .006
-        w.location = (sx * .12, -.08, .2)
-        w.rotation_euler = (0, sx * R(-12), 0)
-        apply_all(w)
-        give(w, m['wing'], True)
-        wings.append(w)
-    export([body] + wings, 'insect')
+    for pair, (sz, y0, z0) in enumerate(((1.0, -.08, .21), (.72, .06, .19))):
+        for sx, name in ((1, 'WingR'), (-1, 'WingL')):
+            name = name + ('2' if pair else '')
+            bm = bmesh.new()
+            n = 28
+            outline = []
+            for i in range(n):
+                t = i / (n - 1) * math.pi
+                x = sx * (.04 + .6 * sz * math.sin(t) ** .75)
+                y = (.46 * sz * (1 - math.cos(t)) * .5 - .04 + .09 * sz * math.sin(t))
+                outline.append(bm.verts.new((x, y, 0)))
+            bm.faces.new(outline if sx > 0 else list(reversed(outline)))
+            me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
+            w = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(w)
+            sol = w.modifiers.new('sol', 'SOLIDIFY'); sol.thickness = .005
+            apply_all(w); give(w, m['wing'], True)
+            vparts = [w]
+            for k in range(3):   # veins
+                a0 = (k + 1) / 4
+                vn = tube([(sx * .04, .0, .003), (sx * .3 * sz, (a0 - .3) * .3 * sz, .003), (sx * .55 * sz, (a0 - .2) * .45 * sz, .003)], .004, .002, v=4)
+                give(vn, m['leg'], True); vparts.append(vn)
+            wo = join(vparts); wo.name = name
+            wo.location = (sx * .1, y0, z0); wo.rotation_euler = (0, sx * R(-10), 0)
+            activate(wo); bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+            wings.append(wo)
+    export([body, abd] + legs + wings, 'insect')
 
 
 # ---------------------------------------------------------------- floating island base (unit radius, grass top at z=0)
