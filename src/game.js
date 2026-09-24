@@ -299,13 +299,16 @@ export async function createGame(opts) {
     <div class="g-hit"></div>
     <div class="g-tl"><div class="g-lvl"></div><div class="g-hearts"></div><div class="g-row"><div class="g-shards"><i></i><i></i><i></i></div><div class="g-relics"></div></div>
       <div class="g-dash"><span class="gd-ic"><svg viewBox="0 0 24 24"><path d="M13 4l7 8-7 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8h7M5 12h9M3 16h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><div class="gd-bar"><i></i></div><b class="gd-key"></b></div></div>
-    <div class="g-notice"><div class="gn-card"><div class="gn-ic"><svg viewBox="0 0 24 24"><path d="M13 4l7 8-7 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8h7M5 12h9M3 16h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></div><small>THIS MAP HAS</small><h2>Dash enabled</h2>
-      <p>Press <b class="gn-key"></b> to dash forward. Each dash uses stamina and needs 1 second to recharge. Dash through gaps, past insects and out of trouble.</p>
+    <div class="g-notice"><div class="gn-card">
+      <div class="gn-top"><div class="gn-ic"><svg viewBox="0 0 24 24"><path d="M13 4l7 8-7 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8h7M5 12h9M3 16h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+        <div><small>NEW ABILITY</small><h2>Dash</h2></div></div>
+      <div class="gn-demo"><i class="gn-dot"></i><i class="gn-streak"></i></div>
+      <ul class="gn-list"><li><b class="gn-key"></b><span>Burst forward</span></li><li><b>1s</b><span>Recharge</span></li><li><b class="gn-bar"><i></i></b><span>Uses stamina</span></li></ul>
       <button class="g-btn gn-ok"></button></div></div>
     <div class="g-count"></div>
     <div class="g-tr"><div class="g-timer">0:00.0</div><div class="g-par"></div><div class="g-fps"></div></div>
     <div class="g-msg"></div>
-    <div class="g-relicmsg"><small></small><b></b></div>
+    <div class="g-relicmsg"><small></small><b></b><span class="rm-hint"></span></div>
     <div class="g-prompt"></div>
     <canvas class="g-map" width="200" height="200"></canvas>
     <div class="g-hints"></div>
@@ -936,7 +939,7 @@ export async function createGame(opts) {
     H.title.querySelector('p').textContent = L.def.sub;
     H.title.classList.remove('show'); void H.title.offsetWidth; H.title.classList.add('show');
     ensureHum(); setHum(0);
-    P.stamina = 100; P.dashCd = 0; P.dashT = 0; dashPressed = false; trail.t = 0; trailPts.visible = false;
+    P.stamina = 100; P.dashCd = 0; P.dashT = 0; dashPressed = false; trail.t = 0; trailPts.visible = false; trailRibbon.visible = false; trailRing.visible = false; P.relicUses = 0;
     H.dash.classList.toggle('on', !!L.def.dash);
     H.notice.classList.remove('show'); H.count.className = 'g-count';
     // dash maps explain the dash once per session; then the optional speedrun countdown
@@ -944,7 +947,7 @@ export async function createGame(opts) {
       state = 'notice'; noticeSeen.add(i);
       const pad = showPad();
       H.notice.querySelector('.gn-key').textContent = pad ? '○' : 'F';
-      H.notice.querySelector('.gn-ok').innerHTML = `<span class="gk">${pad ? '✕' : 'Enter'}</span>OK`;
+      H.notice.querySelector('.gn-ok').innerHTML = `<span class="gk">${pad ? '✕' : 'Enter'}</span>Got it`;
       setTimeout(() => { if (state === 'notice') H.notice.classList.add('show'); }, 700);
     } else beginRun();
     lastT = performance.now();
@@ -1047,6 +1050,7 @@ export async function createGame(opts) {
     snd.relic(); rumble(400, .4, .8);
     // not saved yet: relics only count once the level is finished (see showComplete)
     H.relicMsg.querySelector('small').textContent = T('relic');
+    H.relicMsg.querySelector('.rm-hint').innerHTML = relicUsable(levelIndex) ? `Press <b>${showPad() ? 'Touchpad' : 'Tab'}</b> → <b>Powers</b> to spend it and reveal a path` : '';
     H.relicMsg.querySelector('b').textContent = rl.name;
     H.relicMsg.classList.remove('show'); void H.relicMsg.offsetWidth; H.relicMsg.classList.add('show');
     updateRelicHud();
@@ -1061,13 +1065,13 @@ export async function createGame(opts) {
   function showComplete() {
     state = 'complete';
     const medal = medalFor(time, L.def.par);
-    const relicsNow = L.relics.filter(r => r.taken && !r.had).map(r => r.idx);
+    const relicsNow = L.relics.filter(r => r.taken && !r.had && !r.used).map(r => r.idx);
     if (onRelic) relicsNow.forEach(idx => onRelic(levelIndex, idx));
     const res = onLevelComplete(levelIndex, time, medal, relicsNow, P.deathsRun || 0) || {};
     const last = lastOfChapter(levelIndex);
     const found = L.relics.filter(r => r.had || r.taken).length;
     H.complete.querySelector('.g-medal').className = 'g-medal ' + medal;
-    H.complete.querySelector('.g-medal').innerHTML = `<span>${T(medal)}</span>`;
+    H.complete.querySelector('.g-medal').innerHTML = `${medalSVG(medal)}<span>${T(medal)}</span>`;
     H.complete.querySelector('small').textContent = `${T('level')} ${levelNum(levelIndex)} · ${L.def.name}`;
     H.complete.querySelector('h1').textContent = last ? (L.def.demo ? 'Demo complete' : T('finalT').replace(/1/, chapterOf(levelIndex))) : T('complete');
     H.complete.querySelector('.g-stats').innerHTML =
@@ -1603,22 +1607,36 @@ export async function createGame(opts) {
     rumble(40, 0, .3);
   }
   /* ---------- relic powers: spend a collected relic to light a 1-minute trail to your next goal ---------- */
+  // only relics from the chapter you're playing work, and at most 2 per run
+  const MAX_USES = 2;
+  const relicUsable = li => chapterOf(li) === chapterOf(levelIndex);
   const ownedRelics = prog => {
     const out = [];
-    LEVELS.forEach((l, li) => (l.relics || []).forEach((name, j) => {
-      if (prog.relics && prog.relics[li] && prog.relics[li][j]) out.push({ li, j, name, icon: l.relicIds ? l.relicIds[j] : li * 2 + j, col: `rgb(${(l.palette.aur || [.3, 1, .7]).map(v => v * 255 | 0).join(',')})` });
-    }));
+    LEVELS.forEach((l, li) => {
+      if (!relicUsable(li)) return;
+      (l.relics || []).forEach((name, j) => {
+        const saved = prog.relics && prog.relics[li] && prog.relics[li][j];
+        const live = li === levelIndex && L.relics.find(r => r.idx === j && r.taken && !r.had && !r.used);
+        if (saved || live) out.push({ li, j, name, live: !!live, icon: l.relicIds ? l.relicIds[j] : li * 2 + j, col: `rgb(${(l.palette.aur || [.3, 1, .7]).map(v => v * 255 | 0).join(',')})` });
+      });
+    });
     return out;
   };
   function powersHTML(prog) {
     const list = ownedRelics(prog);
     ov.psel = clamp(ov.psel, 0, Math.max(list.length - 1, 0));
-    const active = trail.t > 0 ? `<div class="ov-pow-live">Trail active · ${Math.ceil(trail.t)}s left</div>` : '';
-    if (!list.length) return `<div class="ov-pow-empty"><b>No relics yet</b><small>Find a hidden relic, then spend it here to reveal a glowing trail to your next goal for 1 minute.</small></div>`;
-    return `<div class="ov-pow-wrap"><div class="ov-pow-head"><b>Pathfinder</b><small>Spend a relic to light a trail on the ground to the nearest star shard, or the portal once you have them all. Lasts 1 minute. The relic leaves your Collection; find it again to get it back.</small>${active}</div>
-      <div class="ov-pows">${list.map((r, k) => `<button class="ov-pow${k === ov.psel ? ' sel' : ''}" style="--c:${r.col};--d:${k * 30}ms"><img src="relics/relic_${r.icon}.png" alt=""><span><b>${r.name}</b><small>${LEVELS[r.li].name}</small></span><em>USE</em></button>`).join('')}</div></div>`;
+    const left = MAX_USES - P.relicUses;
+    const chips = `<div class="ov-pow-chips"><span class="${left ? '' : 'out'}">${'◆'.repeat(left)}${'◇'.repeat(P.relicUses)} ${left}/${MAX_USES} uses left this run</span><span>Chapter ${chapterOf(levelIndex)} relics only</span>${trail.t > 0 ? `<span class="live">Trail active · ${Math.ceil(trail.t)}s</span>` : ''}</div>`;
+    if (!list.length) return `<div class="ov-pow-empty"><b>No relics to spend</b><small>Find a hidden relic in Chapter ${chapterOf(levelIndex)}, then spend it here to reveal a glowing path to your next goal for 1 minute.</small>${chips}</div>`;
+    return `<div class="ov-pow-wrap"><div class="ov-pow-head"><b>Pathfinder</b><small>Spend a relic to light a path to the nearest star shard, or the portal once you have them all. Lasts 1 minute, and the relic goes back into hiding until you find it again.</small>${chips}</div>
+      <div class="ov-pows">${list.map((r, k) => `<button class="ov-pow${k === ov.psel ? ' sel' : ''}" style="--c:${r.col};--d:${k * 30}ms"><img src="relics/relic_${r.icon}.png" alt=""><span><b>${r.name}</b><small>${r.live ? 'Found this run' : LEVELS[r.li].name}</small></span><em>${left ? 'USE' : '—'}</em></button>`).join('')}</div></div>`;
   }
-  function markPower() { ovBody.querySelectorAll('.ov-pow').forEach((el, k) => el.classList.toggle('sel', k === ov.psel)); const el = ovBody.querySelector('.ov-pow.sel'); if (el) el.scrollIntoView({ block: 'nearest' }); audio.SFX.hover(ov.psel, true); }
+  function markPower() {
+    ovBody.querySelectorAll('.ov-pow').forEach((el, k) => el.classList.toggle('sel', k === ov.psel));
+    const el = ovBody.querySelector('.ov-pow.sel');
+    if (el) { const r = el.getBoundingClientRect(), b = ovBody.getBoundingClientRect(); if (r.top < b.top + 12 || r.bottom > b.bottom - 12) ovBody.scrollBy({ top: r.top - b.top - (b.height - r.height) / 2, behavior: 'smooth' }); }
+    audio.SFX.hover(ov.psel, true);
+  }
   function movePower(d) {
     const n = ownedRelics((getProgress && getProgress()) || {}).length;
     const k = ov.psel + d; if (k < 0 || k >= n) { audio.SFX.bump(); return; }
@@ -1627,7 +1645,10 @@ export async function createGame(opts) {
   function usePower() {
     const list = ownedRelics((getProgress && getProgress()) || {}), r = list[ov.psel];
     if (!r) { audio.SFX.bump(); return; }
-    onUseRelic && onUseRelic(r.li, r.j);
+    if (P.relicUses >= MAX_USES) { audio.SFX.bump(); message('You can use 2 relics per run', 2.2); return; }
+    P.relicUses++;
+    if (r.live) { const rl = L.relics.find(x => x.idx === r.j && x.taken && !x.had && !x.used); if (rl) rl.used = true; }
+    else onUseRelic && onUseRelic(r.li, r.j);
     // a ghost relic of this level becomes claimable again once you restart
     trail.t = 60; trail.recalc = 0;
     closeOverlay(true);
@@ -1645,14 +1666,50 @@ export async function createGame(opts) {
   trailGeo.setAttribute('color', new THREE.BufferAttribute(trailCol, 3));
   const trailPts = new THREE.Points(trailGeo, new THREE.PointsMaterial({ size: 1.0, map: glowTex, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
   trailPts.frustumCulled = false; trailPts.visible = false; scene.add(trailPts);
-  const trail = { t: 0, recalc: 0, n: 0 };
+  const trail = { t: 0, recalc: 0, n: 0, len: 1 };
+  // the path itself: a soft glowing ribbon on the ground with chevrons flowing toward the goal
+  const trailU = { time: { value: 0 }, col: { value: new THREE.Color() }, fade: { value: 0 }, len: { value: 1 } };
+  const trailRibbon = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.ShaderMaterial({
+    uniforms: trailU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
+    fragmentShader: `uniform float time, fade, len; uniform vec3 col; varying vec2 vUv;
+      void main(){
+        float v = abs(vUv.y - .5) * 2.;
+        float core = exp(-v * v * 18.), glow = exp(-v * v * 2.5) * .45;
+        float s = fract(vUv.x * .42 - time * 1.1);
+        float chev = smoothstep(.0, .06, s - v * .18) * (1. - smoothstep(.1, .22, s - v * .18)) * (1. - v);
+        float ends = smoothstep(0., 2.5, vUv.x) * (1. - smoothstep(len - 1.5, len, vUv.x) * .4);
+        float a = (core * .9 + glow + chev * 1.4) * fade * ends;
+        gl_FragColor = vec4(col * a, a);
+      }`
+  }));
+  trailRibbon.frustumCulled = false; trailRibbon.visible = false; trailRibbon.renderOrder = 2; scene.add(trailRibbon);
+  const trailRing = new THREE.Mesh(new THREE.RingGeometry(.8, 1.05, 48), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+  trailRing.rotation.x = -Math.PI / 2; trailRing.visible = false; scene.add(trailRing);
+  function buildRibbon(pts) {
+    if (pts.length < 2) { trailRibbon.visible = false; return; }
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', .5);
+    const L_ = curve.getLength(), n = Math.max(2, Math.ceil(L_ / .3)), w = .5;
+    const pos = new Float32Array(n * 2 * 3), uv = new Float32Array(n * 2 * 2), idx = [];
+    for (let k = 0; k < n; k++) {
+      const u = k / (n - 1), p = curve.getPointAt(u), tg = curve.getTangentAt(u);
+      const nx = -tg.z, nz = tg.x, nl = Math.hypot(nx, nz) || 1;
+      pos.set([p.x + nx / nl * w, .1, p.z + nz / nl * w, p.x - nx / nl * w, .1, p.z - nz / nl * w], k * 6);
+      uv.set([u * L_, 0, u * L_, 1], k * 4);
+      if (k < n - 1) { const a = k * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(idx);
+    trailRibbon.geometry.dispose(); trailRibbon.geometry = g; trailU.len.value = L_;
+    trailRing.position.copy(pts[pts.length - 1]).setY(.12);
+  }
   function trailTarget() {
     const s_ = L.shards.filter(x => !x.taken);
     if (!s_.length) return [cellOf(L.portal.pos.x, L.portal.pos.z)];
     return s_.map(x => [x.r, x.c]);
   }
   function updateTrail(dt, t) {
-    if (trail.t <= 0) { trailPts.visible = false; return; }
+    if (trail.t <= 0) { trailPts.visible = false; trailRibbon.visible = false; trailRing.visible = false; return; }
     trail.t -= dt; trail.recalc -= dt;
     if (trail.recalc <= 0) {
       trail.recalc = .4;
@@ -1669,16 +1726,38 @@ export async function createGame(opts) {
         for (let k = 0; k < steps && n < TRAIL_N; k++, n++) { const v = pts[a].clone().lerp(pts[a + 1], k / steps); trailPos.set([v.x, .22, v.z], n * 3); }
       }
       trail.n = n; trailGeo.setDrawRange(0, n); trailGeo.attributes.position.needsUpdate = true;
+      buildRibbon(pts);
     }
     const col = new THREE.Color(...(pal.aur || [.3, 1, .7])), fade = Math.min(1, trail.t / 4);
     for (let k = 0; k < trail.n; k++) {
-      const w = (.3 + .7 * Math.max(0, Math.sin(k * .45 - t * 7))) * fade;   // pulses flow toward the goal
+      const w = Math.pow(Math.max(0, Math.sin(k * .21 - t * 3.2)), 6) * fade * .8;   // sparkles drift toward the goal
       trailCol[k * 3] = col.r * w; trailCol[k * 3 + 1] = col.g * w; trailCol[k * 3 + 2] = col.b * w;
     }
     trailGeo.attributes.color.needsUpdate = true;
     trailPts.visible = true;
+    trailU.time.value = t; trailU.fade.value = fade; trailU.col.value.copy(col); trailRibbon.visible = true;
+    const rp = (t * .8) % 1; trailRing.visible = true; trailRing.scale.setScalar(.6 + rp * 1.4); trailRing.material.color.copy(col).multiplyScalar((1 - rp) * fade * 1.5);
+    for (let k = 0; k < trail.n; k++) trailPos[k * 3 + 1] = .35 + Math.sin(k * .7 + t * 2) * .12;
+    trailGeo.attributes.position.needsUpdate = true;
   }
   const medalDot = m => m ? `<i class="ov-medal ${m}"></i>` : '';
+  // a proper medal: ribbon, milled rim, embossed star and a sheen, in real metal tones
+  function medalSVG(kind) {
+    const C = { gold: ['#6b3f06', '#b87b14', '#f2c14e', '#fff1b8'], silver: ['#3f4757', '#8791a6', '#d9dfea', '#ffffff'], bronze: ['#44200b', '#8f4c22', '#d98b52', '#ffd9b8'] }[kind];
+    const id = 'md' + kind, star = Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 9 : 21; return `${(60 + Math.cos(a) * r).toFixed(1)},${(98 + Math.sin(a) * r).toFixed(1)}`; }).join(' ');
+    return `<svg class="medal-svg" viewBox="0 0 120 150"><defs>
+      <linearGradient id="${id}r" x1="0" x2="1"><stop offset="0" stop-color="#2b1f6e"/><stop offset=".5" stop-color="#6f5cf0"/><stop offset="1" stop-color="#2b1f6e"/></linearGradient>
+      <linearGradient id="${id}e" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${C[3]}"/><stop offset=".45" stop-color="${C[2]}"/><stop offset="1" stop-color="${C[0]}"/></linearGradient>
+      <radialGradient id="${id}f" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="${C[3]}"/><stop offset=".4" stop-color="${C[2]}"/><stop offset="1" stop-color="${C[1]}"/></radialGradient>
+      <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C[3]}"/><stop offset="1" stop-color="${C[1]}"/></linearGradient></defs>
+      <path d="M28 0h24l16 60-22 6z" fill="url(#${id}r)"/><path d="M92 0H68L52 60l22 6z" fill="url(#${id}r)" opacity=".8"/>
+      <path d="M36 0h6l15 58-5 1zM78 0h6L69 59l-5-1z" fill="#fff" opacity=".35"/>
+      <circle cx="60" cy="98" r="42" fill="url(#${id}e)"/>
+      <circle cx="60" cy="98" r="37.5" fill="none" stroke="${C[0]}" stroke-width="3" stroke-dasharray="1.6 2.1" opacity=".55"/>
+      <circle cx="60" cy="98" r="33" fill="url(#${id}f)" stroke="${C[1]}" stroke-width="1.5"/>
+      <polygon points="${star}" fill="url(#${id}s)" stroke="${C[0]}" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M30 86a32 32 0 0 1 44-20" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".35"/></svg>`;
+  }
   function renderOverlay() {
     const prog = (getProgress && getProgress()) || {};
     hud.querySelector('.ov-keys').innerHTML = showPad()
