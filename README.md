@@ -4,18 +4,15 @@ A dreamy third-person space-maze game. Guide a small astronaut across floating c
 
 ## Play
 
-**In your browser, no install:** download or clone this repo and open `index.html` in Chrome, Edge or Firefox. The game is prebuilt (`game.bundle.js`), so nothing else is needed. You can also turn on GitHub Pages (Settings → Pages → deploy from `main`) and play it online.
-
-**Windows:** from [Releases](../../releases) download either
-- **Aurora-Setup.exe**: installs Aurora and puts an **Aurora** shortcut on your desktop and in the Start menu, or
-- **Aurora.exe**: a single portable file. Put it anywhere (your desktop too) and double-click to play.
+Download from [Releases](../../releases):
+- **Aurora-Setup.exe**: installs the game with a desktop shortcut
+- **Aurora.exe**: portable, run it from anywhere
 
 > Windows may show "Windows protected your PC" because the game isn't code-signed. Click **More info → Run anyway**.
 
 ## Features
 
 - 7 levels: The Drift, Nebula Gardens, The Core, Shattered Halo, Laser Garden, Aurora's Heart and **Level Impossible**
-- Level Impossible (v1.5, the final update of Chapter 1): the biggest map yet (25×25), packed with lasers, spike traps, drones and crumbling tiles, faster hazards and only 2 hearts
 - Hazards: patrol drones, rotating lasers, spike traps, crumbling tiles, moving platforms and bounce pads
 - Hearts, par times and gold/silver/bronze medals
 - 14 hidden relics, each with its own design, saved to your Collection
