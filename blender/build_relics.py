@@ -234,7 +234,35 @@ def crown():          # 11 Northern Crown
     fin(ico(.08, (0, -.36, -.1), sc=(1, .6, 1)), glow('RGemBig', (.4, 1, .75), 6))
 
 
-DESIGNS = [compass, first_star, seedlight, tidal_bloom, ember, hourglass, halo_shard, lantern, prism_thorn, lotus, heart, crown]
+def amber_seed():     # 12 Amber Heartseed (chapter 2)
+    amb = glass('RAmber', (1, .62, .15)); wood = mat('RWood', (.35, .22, .12), .7)
+    leaf = mat('RLeaf', (.2, .8, .5), .4, .1, emit=(.1, .5, .3), strength=1)
+    fin(sphere(.26, (0, 0, -.05), (1, 1, 1.25)), amb, True)
+    fin(cone(.19, 0, .3, (0, 0, .3), v=24), amb, True)
+    fin(sphere(.07, (0, 0, -.05)), glow('RSeedCore', (1, .85, .3), 6), True)
+    fin(torus(.36, .03, (0, 0, -.05), rot=(R(90), 0, R(20))), wood, True)
+    fin(torus(.34, .025, (0, 0, -.05), rot=(R(70), R(40), 0)), wood, True)
+    fin(cyl(.018, .16, (0, 0, .5), v=8), wood)
+    for sx in (-1, 1):
+        fin(sphere(.09, (sx * .08, 0, .58), (1, .35, .1)), leaf, True)
+
+
+def moonleaf():       # 13 Moonleaf Totem (chapter 2)
+    wood = mat('RWood', (.35, .22, .12), .7); dark = mat('RWoodDark', (.2, .12, .07), .8)
+    moon = mat('RMoonleaf', (.35, .85, .3), .35, .1, emit=(.25, .8, .2), strength=.9)
+    fin(cyl(.16, .5, (0, 0, -.2), v=8), wood)
+    fin(cyl(.19, .06, (0, 0, -.45), v=8), dark)
+    fin(cyl(.19, .06, (0, 0, .06), v=8), dark)
+    for sx in (-1, 1):
+        fin(sphere(.035, (sx * .06, -.15, -.12)), glow('RTotemEye', (1, .85, .3), 6), True)
+    for k in range(5):
+        a = R(-60 + k * 30)
+        fin(sphere(.13, (math.sin(a) * .22, 0, .22 + math.cos(a) * .22), (.45, .12, 1)), moon, True)
+    fin(torus(.3, .015, (0, 0, .2), rot=(R(90), 0, 0)), GOLD(), True)
+
+
+DESIGNS = [compass, first_star, seedlight, tidal_bloom, ember, hourglass, halo_shard, lantern, prism_thorn, lotus, heart, crown, amber_seed, moonleaf]
+ONLY = [int(x) for x in args[2].split(',')] if len(args) > 2 else None   # e.g. "12,13" to build just the new ones
 
 
 def render_icon(path):
@@ -250,9 +278,10 @@ def render_icon(path):
     l2.rotation_euler = (Vector((0, 0, 0)) - l2.location).to_track_quat('-Z', 'Y').to_euler()
     world = bpy.data.worlds.new('w'); scn.world = world
     world.color = (0.02, 0.02, 0.04)
-    for eng in ('BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'):
+    for eng in (('CYCLES',) if os.environ.get('RELIC_CYCLES') else ('BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH')):
         try: scn.render.engine = eng; break
         except Exception: continue
+    if scn.render.engine == 'CYCLES': scn.cycles.samples = 48; scn.cycles.device = 'CPU'
     scn.render.film_transparent = True
     scn.render.resolution_x = scn.render.resolution_y = 256
     scn.render.image_settings.file_format = 'PNG'; scn.render.image_settings.color_mode = 'RGBA'
@@ -264,6 +293,7 @@ def render_icon(path):
 
 
 for i, fn in enumerate(DESIGNS):
+    if ONLY is not None and i not in ONLY: continue
     reset(); PARTS.clear()
     fn()
     sel(PARTS[0])

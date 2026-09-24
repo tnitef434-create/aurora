@@ -3,7 +3,7 @@
 // ride a platform lane (M/~ run) end to end; bounce pad clears up to 3 void cells.
 import { LEVELS } from '../src/levels.js';
 
-const floor = c => '.SE*BCDRXH'.includes(c);
+const floor = c => '.SE*BCDRXHI'.includes(c);
 let ok = true;
 for (const [li, L] of LEVELS.entries()) {
   const g = L.map, H = g.length, W = Math.max(...g.map(r => r.length));

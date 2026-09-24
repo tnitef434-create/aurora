@@ -5,7 +5,8 @@ from mathutils import Vector
 
 args = sys.argv[sys.argv.index('--') + 1:]
 OUT = args[0]
-RENDER = len(args) > 1 and args[1] == 'render'
+RENDER = 'render' in args[1:]
+NATURE = 'nature' in args[1:]   # Chapter 2 look: explorer suit with bark, moss and leaves
 os.makedirs(OUT, exist_ok=True)
 R = math.radians
 
@@ -35,6 +36,17 @@ ACC = mat('SuitAccent', (.70, .60, 1.0), .35, .2)
 VISOR = mat('Visor', (.02, .04, .09), .04, .9, emit=(.25, .75, 1.0), strength=1.2)
 GLOW = mat('Glow', (1, .5, .9), emit=(1.0, .5, .85), strength=6)
 GLOW2 = mat('GlowCyan', (.5, .9, 1), emit=(.45, .9, 1.0), strength=6)
+if NATURE:
+    for mm, c in ((SUIT, (.80, .74, .56)), (DARK, (.28, .18, .10)), (ACC, (.30, .62, .20))):
+        mm.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (*c, 1)
+    DARK.node_tree.nodes['Principled BSDF'].inputs['Metallic'].default_value = 0
+    for mm, c in ((GLOW, (1.0, .85, .3)), (GLOW2, (.55, 1.0, .35))):
+        b = mm.node_tree.nodes['Principled BSDF']; b.inputs['Base Color'].default_value = (*c, 1); b.inputs['Emission Color'].default_value = (*c, 1)
+    VISOR.node_tree.nodes['Principled BSDF'].inputs['Emission Color'].default_value = (.5, 1.0, .45, 1)
+LEAF = mat('Leaf', (.20, .55, .16), .7)
+LEAF2 = mat('Leaf2', (.32, .66, .18), .7)
+VINE = mat('Vine', (.18, .38, .10), .8)
+PETAL = mat('Petal', (1.0, .45, .65), .5, emit=(1.0, .35, .6), strength=1.5)
 
 
 def act():
@@ -135,6 +147,41 @@ for sx, s in ((1, 'L'), (-1, 'R')):
     part(cyl(.078, .28, (sx * .11, 0, .31), r2=.07), SUIT, f'shin.{s}')
     part(box((.15, .24, .12), (sx * .11, -.035, .08)), DARK, f'shin.{s}', bevel=.045)  # boot
     part(box((.13, .05, .02), (sx * .11, -.155, .06)), GLOW2, f'shin.{s}')              # toe light
+
+def lsphere(r, loc, sc=(1, 1, 1)):   # low-poly sphere for the many small leaves
+    return sphere(r, loc, sc, seg=10, rings=5)
+
+
+if NATURE:
+    # leaf sprout on the helmet
+    part(cyl(.012, .14, (-.06, .02, 1.83), rot=(R(-12), R(-10), 0), v=6), VINE, 'head')
+    for k, (yaw, pitch) in enumerate(((R(30), R(-35)), (R(200), R(-40)), (R(110), R(-20)))):
+        lf = lsphere(.08, (-.07, .02, 1.9), (1, .38, .07)); lf.rotation_euler = (pitch, 0, yaw)
+        lf.location = (-.07 + math.cos(yaw) * .06, .02 + math.sin(yaw) * .06, 1.9)
+        part(lf, LEAF if k % 2 else LEAF2, 'head')
+    # moss and leaves on the shoulders
+    for sx in (-1, 1):
+        for k in range(3):
+            lf = lsphere(.07, (sx * (.25 + k * .04), -.02 + k * .05, 1.39), (1, .45, .08))
+            lf.rotation_euler = (R(-20 + k * 15), sx * R(25), R(k * 50))
+            part(lf, LEAF2 if k % 2 else LEAF, 'spine')
+    # a vine wrapped around the torso and belt
+    part(torus(.235, .018, (0, 0, 1.05), rot=(R(12), R(-8), 0), maj=32, mn=6), VINE, 'spine')
+    part(torus(.225, .016, (0, 0, .9), rot=(R(-10), R(6), 0), maj=32, mn=6), VINE, 'hips')
+    for k in range(5):
+        a = k / 5 * math.tau
+        lf = lsphere(.05, (math.cos(a) * .24, math.sin(a) * .24, 1.05 + math.sin(a) * .04), (1, .4, .07)); lf.rotation_euler = (0, R(60), a)
+        part(lf, LEAF, 'spine')
+    # a flower growing out of the backpack
+    for k in range(5):
+        a = k / 5 * math.tau
+        part(lsphere(.035, (.13 + math.cos(a) * .035, .25, 1.66 + math.sin(a) * .035), (1, .5, 1)), PETAL, 'spine')
+    # leaf cuffs on wrists and boots
+    for sx, s_ in ((1, 'L'), (-1, 'R')):
+        part(torus(.075, .02, (sx * .32, 0, .86), maj=16, mn=5), VINE, f'forearm.{s_}')
+        for k in range(3):
+            lf = lsphere(.05, (sx * .11 + (k - 1) * .05, -.02, .2), (1, .4, .07)); lf.rotation_euler = (R(70), 0, R((k - 1) * 30))
+            part(lf, LEAF2, f'shin.{s_}')
 
 sel(PARTS[0])
 for o in PARTS: o.select_set(True)
@@ -243,7 +290,7 @@ action('Cheer', [(1, cheer), (8, cheer2, (0, .08, 0)), (15, cheer)])
 
 # ------------------------------------------------------------------ export
 sel(arm); body.select_set(True)
-bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, 'player.glb'), export_format='GLB', use_selection=True,
+bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, 'player_nature.glb' if NATURE else 'player.glb'), export_format='GLB', use_selection=True,
                           export_animations=True, export_animation_mode='NLA_TRACKS', export_skins=True, export_yup=True)
 print('exported player')
 

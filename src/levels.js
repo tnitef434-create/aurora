@@ -8,7 +8,8 @@
 //  R  rotating laser — jump over the beam
 //  X  spike trap — pulses up and down, cross when it's retracted
 //  H  hidden relic — optional collectible, saved to your Collection
-// Optional per level: relicIds (relic models to reuse), hearts (max hearts cap), hazard (laser/drone speed ×)
+//  I  insect (jungle) — wanders the maze, chases you when it sees you, then winds up and lunges
+// Optional per level: chapter (default 1), theme ('jungle' = island/nature look), relicIds (relic models to reuse), hearts (max hearts cap), hazard (laser/drone speed ×)
 export const TILE = 4;
 
 export const LEVELS = [
@@ -188,6 +189,32 @@ export const LEVELS = [
       '#####.#####.#.#####.###.#',
       '#.....X...R...C C...D..E#',
       '#########################',
+    ],
+  },
+  {
+    name: 'Whispering Grove', par: 150, chapter: 2, theme: 'jungle',
+    sub: 'A new world. Trees block the way, thorns wait in the grass, and something is buzzing…',
+    relics: ['Amber Heartseed', 'Moonleaf Totem'],
+    relicIds: [12, 13],
+    palette: { sky1: 0x0b1a2e, sky2: 0x04060d, neb: [0.2, 0.6, 0.45], neb2: [0.45, 0.3, 0.85], crystal: 0x7ddc5a, trim: 0xd8ff7a, fog: 0x0a1612, sun: 0xfff1c9, planet: 0x9be07a, aur: [0.55, 1.0, 0.45] },
+    map: [
+      '###################',
+      '#S...#.....X.....H#',
+      '#.##.#.###.###.#..#',
+      '#.#..I.#*#.....#.##',
+      '#.#.####.#.#####..#',
+      '#.....X..#...I....#',
+      '###.####.###.####.#',
+      '#*#....#.....#....#',
+      '#.####.#.###.#.####',
+      '#......#.#H#.#....#',
+      '#.######.#.#.####.#',
+      '#...X....#.....X..#',
+      '###.####.###.###..#',
+      '#...#..I.#*....#..#',
+      '#.###.####.###.#.##',
+      '#.....X......#...E#',
+      '###################',
     ],
   },
 ];
