@@ -37,10 +37,6 @@ jobs:
         run: npm ci
       - if: steps.v.outputs.skip != 'true'
         run: npm run build
-      - name: Zip
-        if: steps.v.outputs.skip != 'true'
-        shell: pwsh
-        run: Compress-Archive -Path dist/Aurora-win32-x64/* -DestinationPath Aurora-win64.zip
       - name: Publish release
         if: steps.v.outputs.skip != 'true'
         shell: bash
@@ -50,4 +46,4 @@ jobs:
           TAG="${{ steps.v.outputs.tag }}"
           NOTES="notes/${TAG}.md"
           [ -f "$NOTES" ] || NOTES=/dev/null
-          gh release create "$TAG" Aurora-win64.zip --title "Aurora ${TAG#v}" --notes-file "$NOTES" --latest --target "$GITHUB_SHA"
+          gh release create "$TAG" dist/Aurora.exe dist/Aurora-Setup.exe --title "Aurora ${TAG#v}" --notes-file "$NOTES" --latest --target "$GITHUB_SHA"

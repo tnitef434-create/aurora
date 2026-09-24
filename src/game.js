@@ -817,7 +817,7 @@ export async function createGame(opts) {
     await fade(1, dead ? 600 : 320);
     if (dead) {
       if (S.difficulty === 'Hard') {
-        L.shards.forEach(s => { s.taken = false; s.obj.visible = true; s.obj.scale.setScalar(1); });
+        L.shards.forEach(s => { s.taken = false; showPickup(s.obj, true); s.obj.scale.setScalar(1); });
         P.shardsTaken = 0; P.checkpoint.copy(L.start); L.portal.active = false; time = 0;
         updateShardHud();
       }
@@ -842,6 +842,9 @@ export async function createGame(opts) {
   }
   function updateShardHud() { H.shards.forEach((el, i) => { el.classList.toggle('on', i < P.shardsTaken); if (i >= P.shardsTaken) el.classList.remove('pop'); }); }
 
+  // Hide a pickup without removing its light from the scene: changing the number of visible
+  // lights makes three.js recompile every material, which froze big levels for a moment.
+  function showPickup(o, on) { for (const ch of o.children) { if (ch.isLight) { ch.userData.i0 ??= ch.intensity; ch.intensity = on ? ch.userData.i0 : 0; } else ch.visible = on; } }
   function collectShard(s) {
     s.taken = true; P.shardsTaken++;
     P.checkpoint.copy(s.home);
@@ -859,7 +862,7 @@ export async function createGame(opts) {
     emit(rl.obj.position, new THREE.Color(...pal.aur), 120, 10, 1.6, 2.5);
     if (rl.had) { A.tone({ f: 1318.5, dur: .4, vol: .05, send: .6 }); updateRelicHud(); return; }
     snd.relic(); rumble(400, .4, .8);
-    onRelic && onRelic(levelIndex, rl.idx);
+    // not saved yet: relics only count once the level is finished (see showComplete)
     H.relicMsg.querySelector('small').textContent = T('relic');
     H.relicMsg.querySelector('b').textContent = rl.name;
     H.relicMsg.classList.remove('show'); void H.relicMsg.offsetWidth; H.relicMsg.classList.add('show');
@@ -876,6 +879,7 @@ export async function createGame(opts) {
     state = 'complete';
     const medal = medalFor(time, L.def.par);
     const relicsNow = L.relics.filter(r => r.taken && !r.had).map(r => r.idx);
+    if (onRelic) relicsNow.forEach(idx => onRelic(levelIndex, idx));
     const res = onLevelComplete(levelIndex, time, medal, relicsNow, P.deathsRun || 0) || {};
     const last = levelIndex === LEVELS.length - 1;
     const found = L.relics.filter(r => r.had || r.taken).length;
@@ -1139,12 +1143,12 @@ export async function createGame(opts) {
     }
 
     for (const s of L.shards) {
-      if (s.taken) { s.obj.scale.multiplyScalar(Math.exp(-10 * dt)); s.obj.position.y += dt * 3; if (s.obj.scale.x < .02) s.obj.visible = false; continue; }
+      if (s.taken) { s.obj.scale.multiplyScalar(Math.exp(-10 * dt)); s.obj.position.y += dt * 3; if (s.obj.scale.x < .02) showPickup(s.obj, false); continue; }
       s.obj.rotation.y += dt * 1.6; s.obj.position.y = 1.3 + Math.sin(t * 2 + s.home.x) * .18;
       if (Math.random() < dt * 6) emit(s.obj.position, 0xffc35a, 1, .6, .9, .5, 2);
     }
     for (const rl of L.relics) {
-      if (rl.taken) { rl.obj.scale.multiplyScalar(Math.exp(-8 * dt)); rl.obj.position.y += dt * 4; if (rl.obj.scale.x < .02) rl.obj.visible = false; continue; }
+      if (rl.taken) { rl.obj.scale.multiplyScalar(Math.exp(-8 * dt)); rl.obj.position.y += dt * 4; if (rl.obj.scale.x < .02) showPickup(rl.obj, false); continue; }
       rl.obj.rotation.y -= dt * 1.1; rl.obj.rotation.z = Math.sin(t * 1.3) * .2; rl.obj.position.y = 1.3 + Math.sin(t * 1.6 + rl.c) * .15;
       if (!rl.had && Math.random() < dt * 5) emit(rl.obj.position, new THREE.Color(...pal.aur), 1, .7, 1, .6, 2);
     }
@@ -1242,18 +1246,18 @@ export async function createGame(opts) {
     H.lock.classList.remove('show');
     renderOverlay();
     hud.classList.add('ov-on');
-    A.tone({ f: 523.25, to: 784, type: 'triangle', dur: .12, vol: .07, send: .3 }); A.noise({ dur: .3, from: 400, to: 4000, vol: .04, send: .3 });
+    audio.SFX.open();
     setHum(0);
   }
   function closeOverlay(silent) {
     if (!ov.open) return;
     ov.open = false; hud.classList.remove('ov-on'); lastT = performance.now();
-    if (!silent) { A.tone({ f: 784, to: 523.25, type: 'triangle', dur: .12, vol: .06, send: .3 }); if (running && !paused && ov.relockAfter && !getPad()) requestLock(); }
+    if (!silent) { audio.SFX.close(); if (running && !paused && ov.relockAfter && !getPad()) requestLock(); }
   }
   function setOvTab(t) {
-    if (t === ov.tab) { A.tone({ f: 190, to: 130, type: 'triangle', dur: .08, vol: .08, send: 0 }); return; }
+    if (t === ov.tab) { audio.SFX.bump(); return; }
     ov.tab = t; renderOverlay();
-    A.tone({ f: t ? 987.77 : 880, to: t ? 1174.66 : 739.99, type: 'triangle', dur: .09, vol: .07, send: .15 });
+    audio.SFX.change(t ? 1 : -1);
     rumble(40, 0, .3);
   }
   const medalDot = m => m ? `<i class="ov-medal ${m}"></i>` : '';

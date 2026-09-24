@@ -6,7 +6,9 @@ A dreamy third-person space-maze game. Guide a small astronaut across floating c
 
 **In your browser, no install:** download or clone this repo and open `index.html` in Chrome, Edge or Firefox. The game is prebuilt (`game.bundle.js`), so nothing else is needed. You can also turn on GitHub Pages (Settings → Pages → deploy from `main`) and play it online.
 
-**Desktop app:** get the latest **Aurora-win64.zip** from [Releases](../../releases). Unzip it and run `Aurora.exe`.
+**Windows:** from [Releases](../../releases) download either
+- **Aurora-Setup.exe**: installs Aurora and puts an **Aurora** shortcut on your desktop and in the Start menu, or
+- **Aurora.exe**: a single portable file. Put it anywhere (your desktop too) and double-click to play.
 
 > Windows may show "Windows protected your PC" because the game isn't code-signed. Click **More info → Run anyway**.
 
@@ -41,7 +43,7 @@ Requires [Node.js](https://nodejs.org). All models are generated with [Blender](
 ```bash
 npm install
 npm start          # run the game
-npm run build      # package Aurora.exe into dist/
+npm run build      # build dist/Aurora.exe (portable) and dist/Aurora-Setup.exe
 npm run models     # regenerate the models with Blender (optional)
 ```
 
