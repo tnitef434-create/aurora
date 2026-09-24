@@ -3,6 +3,8 @@ name: Release
 on:
   push:
     tags: ['v*']
+    branches: [main]
+    paths: ['package.json', 'notes/**', '.github/workflows/release.yml']
   workflow_dispatch:
     inputs:
       tag:
@@ -17,20 +19,35 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm ci
-      - run: npm run build
-      - name: Zip
-        shell: pwsh
-        run: Compress-Archive -Path dist/Aurora-win32-x64/* -DestinationPath Aurora-win64.zip
-      - name: Publish release
+      - name: Pick version
+        id: v
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${{ inputs.tag || github.ref_name }}"
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then TAG="${GITHUB_REF_NAME}"; else TAG="${{ inputs.tag }}"; fi
+          [ -n "$TAG" ] || TAG="v$(node -p "require('./package.json').version")"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "skip=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.v.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: steps.v.outputs.skip != 'true'
+        run: npm ci
+      - if: steps.v.outputs.skip != 'true'
+        run: npm run build
+      - name: Zip
+        if: steps.v.outputs.skip != 'true'
+        shell: pwsh
+        run: Compress-Archive -Path dist/Aurora-win32-x64/* -DestinationPath Aurora-win64.zip
+      - name: Publish release
+        if: steps.v.outputs.skip != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.v.outputs.tag }}"
           NOTES="notes/${TAG}.md"
           [ -f "$NOTES" ] || NOTES=/dev/null
           gh release create "$TAG" Aurora-win64.zip --title "Aurora ${TAG#v}" --notes-file "$NOTES" --latest --target "$GITHUB_SHA"
