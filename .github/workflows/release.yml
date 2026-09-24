@@ -46,4 +46,4 @@ jobs:
           TAG="${{ steps.v.outputs.tag }}"
           NOTES="notes/${TAG}.md"
           [ -f "$NOTES" ] || NOTES=/dev/null
-          gh release create "$TAG" dist/Aurora.exe dist/Aurora-Setup.exe --title "Aurora ${TAG#v}" --notes-file "$NOTES" --latest --target "$GITHUB_SHA"
+          gh release create "$TAG" dist/Aurora-Setup.exe --title "Aurora ${TAG#v}" --notes-file "$NOTES" --latest --target "$GITHUB_SHA"
