@@ -37,6 +37,12 @@ jobs:
         run: npm ci
       - if: steps.v.outputs.skip != 'true'
         run: npm run build
+        env:
+          # Code signing (removes the SmartScreen warning). Add these repository secrets when you have a
+          # Windows code-signing certificate: WIN_CSC_LINK = base64 of the .pfx, WIN_CSC_KEY_PASSWORD = its password.
+          # While they are empty the installer is built unsigned, exactly as before.
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
       - name: Publish release
         if: steps.v.outputs.skip != 'true'
         shell: bash

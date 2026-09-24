@@ -465,6 +465,38 @@ body.ingame #root{display:none}
 .lvl-diff{display:flex;gap:3px;margin-left:auto}
 .lvl-diff i{width:6px;height:10px;border-radius:2px;background:rgba(255,255,255,.18)}
 .lvl-diff i.on{background:linear-gradient(#ff7fd6,#b69cff)}
+/* play menu v1.6.3 */
+.lv-grid{grid-template-columns:repeat(4,1fr)!important;gap:12px!important}
+.lvl-card canvas{height:92px!important}
+.lvl-meta{padding:8px 12px 10px!important}
+.lvl-name{font-size:14px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lvl-top{gap:8px!important}
+.lvl-diff{display:none!important}
+.lvl-stats{font-size:12px!important;gap:8px!important}
+.lvl-lock{font-size:11px!important}.lvl-lock b{font-size:20px!important}
+.rdetail{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 20px;margin-bottom:12px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.rd-l{min-width:0}.rd-num{display:block;font-size:11px;font-weight:900;letter-spacing:.3em;color:#7fffd4}
+.rd-name{display:block;font-size:24px;font-weight:900;margin:2px 0}.rd-sub{display:block;font-size:13px;color:var(--faint);font-weight:600}
+.rd-stats{display:flex;gap:22px;flex:none}
+.rd-stats span{display:flex;flex-direction:column;align-items:flex-start;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;gap:2px}
+.rd-stats span small{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);font-weight:800}
+.rd-stats em{font-style:normal;color:#7fffd4}.rd-stats .mdot{display:inline-block;margin-right:6px;vertical-align:middle}
+.ready{height:78px!important}
+.ch-card{min-height:230px!important;overflow:hidden;padding:30px 28px!important}
+.ch-art{position:absolute;inset:0;pointer-events:none;opacity:.55}
+.ch-art i{position:absolute;border-radius:50%;filter:blur(38px)}
+.ch1 .ch-art i:nth-child(1){width:220px;height:140px;right:-40px;top:-30px;background:#7fffd4}
+.ch1 .ch-art i:nth-child(2){width:200px;height:160px;right:90px;bottom:-80px;background:#b69cff}
+.ch1 .ch-art i:nth-child(3){width:160px;height:120px;right:-30px;bottom:-40px;background:#ff5c8a;opacity:.6}
+.soon .ch-art i:nth-child(1){width:200px;height:150px;right:-40px;top:-40px;background:#ff3b4f;opacity:.5}
+.soon .ch-art i:nth-child(2){width:180px;height:140px;right:120px;bottom:-90px;background:#ffb14a;opacity:.4}
+.ch-card > *:not(.ch-art){position:relative}
+.ch-card .ch-badge,.ch-card .ch-lock{position:absolute}
+.ch-pips{display:flex;gap:7px;margin-top:18px}
+.ch-pips i{width:26px;height:8px;border-radius:9px;background:rgba(255,255,255,.12)}
+.ch-pips i.open{background:rgba(255,255,255,.35)}.ch-pips i.done{background:#7fffd4}
+.ch-pips i.gold{background:#ffd76a;box-shadow:0 0 8px #ffd76a}.ch-pips i.silver{background:#e3e8f0}.ch-pips i.bronze{background:#e59a6a}
+.ch-lock{position:absolute;right:28px;bottom:22px;font-size:34px;opacity:.7}
 /* chapters */
 .ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
 .ch-card{position:relative;padding:26px 24px;min-height:170px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:transform .3s var(--ease),border-color .3s,box-shadow .3s}
@@ -1152,16 +1184,13 @@ prompt.addEventListener('click', activate);
 /* ---------- tabs ---------- */
 const tabs = $$('.tab'), tabInd = $('#tabInd');
 function placeInd(t) { tabInd.style.width = t.offsetWidth + 'px'; tabInd.style.transform = `translateX(${t.offsetLeft}px)`; }
-let tabTimer;
+function setTab(i) { tabs.forEach((x, k) => x.classList.toggle('active', k === i)); placeInd(tabs[i]); }
 tabs.forEach((t, i) => {
   t.addEventListener('pointerenter', () => { if (mode === 'menu') SFX.hover(i + 3, true); });
   t.addEventListener('click', () => {
     if (mode !== 'menu') return;
-    tabs.forEach(x => x.classList.toggle('active', x === t)); placeInd(t); SFX.tab();
-    clearTimeout(tabTimer);
-    if (i === 1) {
-      tabTimer = setTimeout(() => { if (mode === 'menu') openCollection(t); tabs.forEach(x => x.classList.toggle('active', x === tabs[0])); placeInd(tabs[0]); }, 260);
-    }
+    setTab(i); SFX.tab();
+    if (i === 1) openCollection(t);   // tab stays lit while the collection is open
   });
 });
 
@@ -1174,7 +1203,7 @@ const collCard = (() => {
 })();
 function openCollection(tab) {
   const r = tab.getBoundingClientRect();
-  Object.assign(collCard.el.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  Object.assign(collCard.el.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', borderRadius: '12px' });
   vibrate(18);
   openPanel(collCard);
 }
@@ -1235,6 +1264,7 @@ const titleScale = c => parseFloat(getComputedStyle($('h2', c.el)).fontSize) / p
 const iconOf = c => $('.icon svg', c.el).getBoundingClientRect();
 // the top glow bar is centred with a CSS transform, so it must not be animated here (it used to sit off to the right while opening)
 const secondary = () => [$('.panel-head'), $('#pSub')];
+const topGlow = () => $('.panel-inner > .glow-top');
 
 function openPanel(c) {
   mode = 'panel'; openCard = c;
@@ -1255,11 +1285,22 @@ function openPanel(c) {
   morph.animate([morphFrame(r), MORPH_FULL], o);
   // m-card stays fully opaque underneath; only the panel skin fades in on top, so the stack is never see-through
   mPanel.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 420, easing: 'ease-out' });
-  pTitle.animate([{ transform: flipFrom(pTitle, h2r, titleScale(c)) }, { transform: 'none' }], o);
-  pIcon.animate([{ transform: flipFrom(pIcon, ir, ir.width / pIcon.getBoundingClientRect().width) }, { transform: 'none' }],
-    { duration: OPEN_MS + 120, easing: EASE_OPEN });
+  if (c === collCard) {
+    // the panel unfolds downward from the tab; title and icon settle in once it has room
+    const e = { duration: 520, delay: 220, easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'backwards' };
+    pTitle.animate([{ opacity: 0, transform: 'translateY(-24px)' }, { opacity: 1, transform: 'none' }], e);
+    pIcon.animate([{ opacity: 0, transform: 'translateY(-16px) scale(.8) rotate(-12deg)' }, { opacity: 1, transform: 'none' }], { ...e, delay: 300, duration: 640 });
+    pContent.animate([{ opacity: 0, transform: 'translateY(-18px)' }, { opacity: 1, transform: 'none' }], { ...e, delay: 320, duration: 560 });
+  } else {
+    pTitle.animate([{ transform: flipFrom(pTitle, h2r, titleScale(c)) }, { transform: 'none' }], o);
+    pIcon.animate([{ transform: flipFrom(pIcon, ir, ir.width / pIcon.getBoundingClientRect().width) }, { transform: 'none' }],
+      { duration: OPEN_MS + 120, easing: EASE_OPEN });
+  }
   secondary().forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
     { duration: 500, delay: 200 + i * 50, easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'backwards' }));
+  // top glow grows out from the centre and finishes exactly as the panel lands (transform keeps its centring)
+  topGlow().animate([{ opacity: 0, transform: 'translateX(-50%) scaleX(0)' }, { opacity: 1, transform: 'translateX(-50%) scaleX(1)' }],
+    { duration: OPEN_MS * .45, delay: OPEN_MS * .55, easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'backwards' });
 
   // once fully covered, stop rendering the (blur-heavy) menu underneath
   clearTimeout(openPanel.t);
@@ -1282,10 +1323,17 @@ function closePanel() {
 
   const o = { duration: CLOSE_MS, easing: EASE_CLOSE, fill: 'forwards' };
   [...secondary(), pContent].forEach(el => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-out', fill: 'forwards' }));
+  // glow shrinks back to the centre right away, so it is gone before the panel starts shrinking
+  topGlow().animate([{ opacity: 1, transform: 'translateX(-50%) scaleX(1)' }, { opacity: 0, transform: 'translateX(-50%) scaleX(0)' }], { duration: 180, easing: 'cubic-bezier(.55,0,.1,1)', fill: 'forwards' });
   morph.animate([MORPH_FULL, morphFrame(r)], o);
   mPanel.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: CLOSE_MS - 300, easing: 'ease-in', fill: 'forwards' });
-  pTitle.animate([{ transform: 'none' }, { transform: flipFrom(pTitle, h2r, titleScale(c)) }], o);
-  pIcon.animate([{ transform: 'none' }, { transform: flipFrom(pIcon, ir, ir.width / pIcon.getBoundingClientRect().width) }], o);
+  if (c === collCard) {
+    [pTitle, pIcon].forEach(el => el.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-16px)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }));
+    setTab(0);
+  } else {
+    pTitle.animate([{ transform: 'none' }, { transform: flipFrom(pTitle, h2r, titleScale(c)) }], o);
+    pIcon.animate([{ transform: 'none' }, { transform: flipFrom(pIcon, ir, ir.width / pIcon.getBoundingClientRect().width) }], o);
+  }
 
   // hand back to the real card right as the morph lands on it, then a soft crossfade
   setTimeout(() => {
@@ -1435,8 +1483,12 @@ const ROW = {
     const done = PROG.best.filter(x => x != null).length, total = LEVEL_INFO.length;
     const el = h(`<div class="row col"><div class="rl"><b>Select Chapter</b><small>Each chapter is its own journey through the void.</small></div>
       <div class="ch-grid">
-        <div class="ch-card"><span class="ch-num">CHAPTER 1</span><b>The Aurora</b><small>${total} levels · ${done}/${total} cleared · ◆ ${relicFound()}/${relicTotal()}</small><div class="ch-bar"><i style="width:${done / total * 100}%"></i></div></div>
-        <div class="ch-card soon"><span class="ch-badge">COMING SOON</span><span class="ch-num">CHAPTER 2</span><b>???</b><small>A new journey is on its way.</small></div>
+        <div class="ch-card ch1"><div class="ch-art"><i></i><i></i><i></i></div><span class="ch-num">CHAPTER 1</span><b>The Aurora</b>
+          <small>${total} levels · ${done}/${total} cleared · ◆ ${relicFound()}/${relicTotal()}</small>
+          <div class="ch-pips">${LEVEL_INFO.map((l, i) => `<i class="${PROG.medal[i] || (PROG.best[i] != null ? 'done' : i < PROG.unlocked ? 'open' : '')}" title="${l.name}"></i>`).join('')}</div>
+          <div class="ch-bar"><i style="width:${done / total * 100}%"></i></div></div>
+        <div class="ch-card soon"><div class="ch-art"><i></i><i></i><i></i></div><span class="ch-badge">COMING IN 1.7</span><span class="ch-num">CHAPTER 2</span><b>???</b>
+          <small>A new journey is on its way.</small><div class="ch-lock">🔒</div></div>
       </div></div>`);
     const tiles = $$('.ch-card', el);
     const refresh = () => tiles.forEach((t, i) => t.classList.toggle('sel', i === chSel));
@@ -1451,7 +1503,7 @@ const ROW = {
   },
   levels() {
     S.level = clamp(S.level || 0, 0, PROG.unlocked - 1);
-    const diffBars = i => Array.from({ length: 6 }, (_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('');
+    const diffBars = i => Array.from({ length: LEVEL_INFO.length }, (_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('');
     const el = h(`<div class="row col"><div class="rl"><b>Chapter 1 · Select Level</b><small>Collect the 3 star shards, wake the portal. Relics are hidden off the main path.</small></div>
       <div class="lv-grid">${LEVEL_INFO.map((l, i) => {
         const locked = i >= PROG.unlocked, rel = (PROG.relics[i] || []).filter(Boolean).length, md = PROG.medal[i];
@@ -1468,7 +1520,7 @@ const ROW = {
       if (i === S.level) return;
       const dir = Math.sign(i - S.level) || 1;
       S.level = i; save(); refresh(); SFX.change(dir); vibrate(10);
-      if (readyEls) readyEls.st.textContent = `Level ${i + 1} · ${LEVEL_INFO[i].name}`;
+      if (readyEls) readyEls.update(i);
     };
     tiles.forEach((t, i) => {
       t.addEventListener('click', e => { e.stopPropagation(); if (i === S.level && i < PROG.unlocked) beginLevel(i); else pick(i); });
@@ -1493,8 +1545,19 @@ const ROW = {
     return { el, press: () => SFX.bump(), adjust: () => SFX.bump() };
   },
   start() {
-    const el = h(`<div class="row col ready-row"><button class="ready"><span class="rt">START</span></button><div class="rstatus">Level ${S.level + 1} · ${LEVEL_INFO[S.level].name}</div></div>`);
-    readyEls = { btn: $('.ready', el), rt: $('.rt', el), st: $('.rstatus', el) };
+    const el = h(`<div class="row col ready-row"><div class="rdetail"><div class="rd-l"><span class="rd-num"></span><b class="rd-name"></b><small class="rd-sub"></small></div><div class="rd-stats"></div></div>
+      <button class="ready"><span class="rt">START</span></button></div>`);
+    const update = i => {
+      const l = LEVEL_INFO[i], md = PROG.medal[i], rel = (PROG.relics[i] || []).filter(Boolean).length;
+      $('.rd-num', el).textContent = `LEVEL ${String(i + 1).padStart(2, '0')}`;
+      $('.rd-name', el).textContent = l.name; $('.rd-sub', el).textContent = l.sub || '';
+      $('.rd-stats', el).innerHTML = `<span><small>Par</small>${fmtT(l.par)}</span><span><small>Best</small>${PROG.best[i] != null ? fmtT(PROG.best[i]) : '—'}</span>`
+        + `<span><small>Medal</small>${md ? `<i class="mdot ${md}"></i>${md[0].toUpperCase() + md.slice(1)}` : '—'}</span><span><small>Relics</small><em>◆ ${rel}/${(l.relics || []).length}</em></span>`;
+      $('.rt', el).textContent = `START LEVEL ${i + 1}`;
+      el.querySelector('.rdetail').animate([{ opacity: .3, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.9,.25,1)' });
+    };
+    update(S.level);
+    readyEls = { btn: $('.ready', el), rt: $('.rt', el), update };
     readyEls.btn.addEventListener('click', e => { e.stopPropagation(); beginLevel(S.level); });
     return { el, press: () => beginLevel(S.level), adjust: () => SFX.bump() };
   },
