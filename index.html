@@ -3,7 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Aurora</title>
+<title>Play Aurora — Free 3D Space Maze Game | Unpaused</title>
+<meta name="description" content="Play Aurora now, free in your browser: a dreamy 3D space maze beneath the northern lights. Collect star shards, dodge lasers and insects, find hidden relics.">
+<link rel="canonical" href="https://unpaused.online/aurora/">
+<meta name="theme-color" content="#0b0a1c">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Unpaused">
+<meta property="og:title" content="Play Aurora on Unpaused">
+<meta property="og:description" content="A dreamy 3D space maze beneath the northern lights. Free in your browser, only on Unpaused.">
+<meta property="og:url" content="https://unpaused.online/aurora/">
+<meta property="og:image" content="https://unpaused.online/hub/aurora-poster.jpg">
+<meta property="og:image:alt" content="Green and violet northern lights over dark mountains, the Aurora title scene">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://unpaused.online/hub/aurora-poster.jpg">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","@id":"https://unpaused.online/aurora/#game","name":"Aurora","url":"https://unpaused.online/aurora/","description":"A free 3D space maze game in the browser: collect star shards, avoid hazards and find hidden relics across two chapters.","image":"https://unpaused.online/hub/aurora-poster.jpg","gamePlatform":"Web browser","isAccessibleForFree":true,"publisher":{"@id":"https://unpaused.online/#organization"},"mainEntityOfPage":"https://unpaused.online/games/aurora/"}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -508,6 +522,9 @@ body.ingame #root{display:none}
 .soon .ch-art i:nth-child(2){width:180px;height:140px;right:120px;bottom:-90px;background:#ffb14a;opacity:.4}
 .ch-card > *:not(.ch-art){position:relative}
 .ch-card .ch-badge,.ch-card .ch-lock{position:absolute}
+.ch-card.is-locked>*:not(.ch-locked):not(.ch-art){filter:blur(2px) grayscale(.6);opacity:.5}
+.ch-locked{position:absolute!important;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(6,8,16,.55);font-weight:800;font-size:15px;color:#fff;text-align:center}
+.ch-locked b{font-size:30px}.ch-locked small{font-size:12px;color:var(--faint);font-weight:700}
 .ch-pips{display:flex;gap:7px;margin-top:18px}
 .ch-pips i{width:26px;height:8px;border-radius:9px;background:rgba(255,255,255,.12)}
 .ch-pips i.open{background:rgba(255,255,255,.35)}.ch-pips i.done{background:#7fffd4}
@@ -1101,6 +1118,7 @@ const ICONS = {
   gear: `<svg viewBox="0 0 100 100"><g class="rot" fill="#fff">${[0,45,90,135,180,225,270,315].map(a=>`<rect x="40" y="5" width="20" height="22" rx="2" transform="rotate(${a} 50 50)"/>`).join('')}<path fill-rule="evenodd" d="M16 50a34 34 0 1 0 68 0a34 34 0 1 0 -68 0zM36 50a14 14 0 1 0 28 0a14 14 0 1 0 -28 0z"/></g></svg>`,
   audio: `<svg viewBox="0 0 100 100"><path d="M18 40h14l19-15v50L32 60H18z" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round"/><path class="w1" d="M62 38a16 16 0 0 1 0 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path class="w2" d="M71 27a31 31 0 0 1 0 46" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>`,
   display: `<svg viewBox="0 0 100 100"><rect x="12" y="18" width="76" height="52" rx="8" fill="none" stroke="#fff" stroke-width="8"/><rect class="scr" x="21" y="27" width="58" height="34" rx="2" fill="#fff" opacity=".22"/><path d="M38 84h24M50 71v13" stroke="#fff" stroke-width="8" stroke-linecap="round"/></svg>`,
+  home: `<svg viewBox="0 0 100 100"><path d="M50 16 L86 48 H74 V84 H58 V62 H42 V84 H26 V48 H14 Z" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/><path d="M66 22 h10 v16" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/></svg>`,
   pad: `<svg viewBox="0 0 100 100"><path fill="#fff" d="M30 28h40c10 0 17 6 19 16l5 24c2 9-8 15-15 9l-9-9H30l-9 9c-7 6-17 0-15-9l5-24c2-10 9-16 19-16z"/><g fill="#2e3b49"><rect x="21" y="43" width="18" height="7" rx="2"/><rect x="26.5" y="37.5" width="7" height="18" rx="2"/><circle cx="68" cy="39" r="4.2"/><circle cx="76.5" cy="47" r="4.2"/><circle cx="59.5" cy="47" r="4.2"/><circle cx="68" cy="55" r="4.2"/></g></svg>`
 };
 const DASH_ICON = `<svg viewBox="0 0 24 24"><path d="M13 4l7 8-7 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8h7M5 12h9M3 16h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>`;
@@ -1170,7 +1188,8 @@ const CARDS = [
     { type: 'header', label: 'Input' },
     { type: 'toggle', key: 'invert', label: 'Invert Look' },
     { type: 'toggle', key: 'vibration', label: 'Vibration', desc: 'Controller rumble feedback.' }
-  ]}
+  ]},
+  ...(IS_WEB ? [{ id: 'unpaused', title: 'Back to Unpaused', sub: 'Return to the games hub.', icon: 'home', kind: 'link', href: '/' }] : [])
 ];
 const LEVEL_INFO = (window.AuroraGame && window.AuroraGame.levels) || [];
 const LEVEL_CHORDS = [
@@ -1238,7 +1257,9 @@ const CHAPTERS = [
 const chapterOf = i => (LEVEL_INFO[i] && LEVEL_INFO[i].chapter) || 1;
 const chapterLevels = n => LEVEL_INFO.map((l, i) => i).filter(i => chapterOf(i) === n);
 const levelNum = i => chapterLevels(chapterOf(i)).indexOf(i) + 1;
-const isUnlocked = i => i < PROG.unlocked || chapterLevels(chapterOf(i))[0] === i || PROG.best[i - 1] != null;
+// a chapter opens once every level of the chapter before it has been cleared
+const chapterOpen = n => n <= 1 || chapterLevels(n - 1).every(i => PROG.best[i] != null);
+const isUnlocked = i => chapterOpen(chapterOf(i)) && (i < PROG.unlocked || chapterLevels(chapterOf(i))[0] === i || PROG.best[i - 1] != null);
 
 /* ============================== STATE / DOM ============================== */
 let mode = 'splash';            // splash | intro | menu | panel | closing | modal | quit
@@ -1299,7 +1320,7 @@ function setFocus(i, fromKey) {
   c.shine.classList.remove('run'); void c.shine.offsetWidth; c.shine.classList.add('run');
   SFX.hover(i);
   pr.sv -= 2.2;                                         // squash the prompt
-  plabel.textContent = c.d.kind === 'play' ? 'Play' : 'Open';
+  plabel.textContent = c.d.kind === 'play' ? 'Play' : c.d.kind === 'link' ? 'Go' : 'Open';
   if (fromKey) c.yv -= 120;
   if (root.classList.contains('pad-mode')) vibrate(12, 0, .35);   // light tick in the hands
 }
@@ -1313,6 +1334,7 @@ function activate() {
   pr.sv -= 4;
   cards[focus].sv -= 1.2;
   vibrate(18);
+  if (cards[focus].d.kind === 'link') { SFX.close(); $('#blackout').classList.add('on'); setTimeout(() => location.assign(cards[focus].d.href), 450); return; }
   openPanel(cards[focus]);
 }
 
@@ -1620,8 +1642,9 @@ const ROW = {
     const card = ch => {
       const ids = chapterLevels(ch.n), total = ids.length, done = ids.filter(i => PROG.best[i] != null).length;
       const rel = ids.reduce((n, i) => n + ((PROG.relics[i] || []).filter(Boolean).length), 0), relT = ids.reduce((n, i) => n + (LEVEL_INFO[i].relics || []).length, 0);
-      const isDemo = ids.some(i => LEVEL_INFO[i].demo);
-      return `<div class="ch-card ${ch.art}"><div class="ch-art"><i></i><i></i><i></i></div>${isDemo ? '<span class="ch-badge new">DEMO</span>' : ''}<span class="ch-num">CHAPTER ${ch.n}</span><b>${ch.name}</b>
+      const isDemo = ids.some(i => LEVEL_INFO[i].demo), open = chapterOpen(ch.n);
+      const lock = open ? '' : `<div class="ch-locked"><b>🔒</b>Finish Chapter ${ch.n - 1} to unlock<small>${chapterLevels(ch.n - 1).filter(i => PROG.best[i] != null).length}/${chapterLevels(ch.n - 1).length} levels cleared</small></div>`;
+      return `<div class="ch-card ${ch.art}${open ? '' : ' is-locked'}">${lock}<div class="ch-art"><i></i><i></i><i></i></div>${isDemo ? '<span class="ch-badge new">DEMO</span>' : ''}<span class="ch-num">CHAPTER ${ch.n}</span><b>${ch.name}</b>
         <small>${total} level${total > 1 ? 's' : ''} · ${done}/${total} cleared · ◆ ${rel}/${relT}</small>
         <div class="ch-pips">${ids.map(i => `<i class="${PROG.medal[i] || (PROG.best[i] != null ? 'done' : isUnlocked(i) ? 'open' : '')}" title="${LEVEL_INFO[i].name}"></i>`).join('')}</div>
         <div class="ch-bar"><i style="width:${done / total * 100}%"></i></div></div>`;
@@ -1629,14 +1652,15 @@ const ROW = {
     const el = h(`<div class="row col"><div class="rl"><b>Select Chapter</b><small>Each chapter is its own journey through the void.</small></div>
       <div class="ch-grid">${CHAPTERS.map(card).join('')}</div></div>`);
     const tiles = $$('.ch-card', el);
+    const tryEnter = () => { const n = CHAPTERS[chSel].n; if (chapterOpen(n)) enterChapter(); else { SFX.bump(); vibrate(40); toast(`Finish every level of Chapter ${n - 1} to unlock Chapter ${n}`); } };
     const refresh = () => tiles.forEach((t, i) => t.classList.toggle('sel', i === chSel));
     const pick = i => { if (i < 0 || i >= CHAPTERS.length) { SFX.bump(); return; } if (i !== chSel) { chSel = i; refresh(); SFX.change(i ? 1 : -1); } };
     tiles.forEach((t, i) => {
-      t.addEventListener('click', e => { e.stopPropagation(); pick(i); enterChapter(); });
+      t.addEventListener('click', e => { e.stopPropagation(); pick(i); tryEnter(); });
       t.addEventListener('pointerenter', () => SFX.hover(i + 2, true));
     });
     refresh();
-    return { el, refresh, adjust: d => pick(chSel + d), press: () => enterChapter() };
+    return { el, refresh, adjust: d => pick(chSel + d), press: () => tryEnter() };
   },
   levels() {
     const ids = chapterLevels(CHAPTERS[chSel].n);
