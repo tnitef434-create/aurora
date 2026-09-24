@@ -966,7 +966,8 @@ const LEVEL_CHORDS = [
   [[110.00, 164.81, 220.00, 261.63], [87.31, 174.61, 220.00, 261.63], [130.81, 196.00, 261.63, 329.63], [98.00, 196.00, 246.94, 293.66]],
   [[146.83, 220.00, 293.66, 369.99], [130.81, 196.00, 261.63, 329.63], [123.47, 185.00, 246.94, 311.13], [110.00, 164.81, 220.00, 277.18]],
   [[138.59, 207.65, 261.63, 329.63], [123.47, 185.00, 233.08, 293.66], [116.54, 174.61, 220.00, 277.18], [103.83, 155.56, 207.65, 246.94]],
-  [[130.81, 196.00, 246.94, 329.63], [146.83, 220.00, 277.18, 369.99], [164.81, 246.94, 311.13, 392.00], [123.47, 185.00, 246.94, 311.13]]
+  [[130.81, 196.00, 246.94, 329.63], [146.83, 220.00, 277.18, 369.99], [164.81, 246.94, 311.13, 392.00], [123.47, 185.00, 246.94, 311.13]],
+  [[110.00, 164.81, 207.65, 261.63], [103.83, 155.56, 196.00, 246.94], [98.00, 146.83, 185.00, 233.08], [116.54, 174.61, 220.00, 277.18]]
 ];
 let PROG = { unlocked: 1, best: [], medal: [], relics: {}, runs: {}, stats: {} };
 try { Object.assign(PROG, JSON.parse(localStorage.getItem('aurora-progress') || '{}')); } catch (e) {}
@@ -1365,7 +1366,7 @@ const ROW = {
       <div class="relic-grid">${LEVEL_INFO.map((l, i) => (l.relics || []).map((name, j) => {
         const got = PROG.relics[i] && PROG.relics[i][j];
         const c = `rgb(${(l.palette.aur || [.3, 1, .7]).map(v => v * 255 | 0).join(',')})`;
-        return `<div class="relic-card${got ? ' found' : ''}" style="--c:${c};--k:${k++}"><div class="ricon"><img src="relics/relic_${i * 2 + j}.png" alt=""></div><b>${got ? name : '???'}</b><small>Level ${i + 1} · ${l.name}</small></div>`;
+        return `<div class="relic-card${got ? ' found' : ''}" style="--c:${c};--k:${k++}"><div class="ricon"><img src="relics/relic_${l.relicIds ? l.relicIds[j] : i * 2 + j}.png" alt=""></div><b>${got ? name : '???'}</b><small>Level ${i + 1} · ${l.name}</small></div>`;
       }).join('')).join('')}</div></div>`);
     return { el, press: () => SFX.bump(), adjust: () => SFX.bump() };
   },

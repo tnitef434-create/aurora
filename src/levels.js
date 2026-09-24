@@ -8,6 +8,7 @@
 //  R  rotating laser — jump over the beam
 //  X  spike trap — pulses up and down, cross when it's retracted
 //  H  hidden relic — optional collectible, saved to your Collection
+// Optional per level: relicIds (relic models to reuse), hearts (max hearts cap), hazard (laser/drone speed ×)
 export const TILE = 4;
 
 export const LEVELS = [
@@ -153,6 +154,40 @@ export const LEVELS = [
       '#.####.#.#####.####',
       '#......C.......D..#',
       '###################',
+    ],
+  },
+  {
+    name: 'Level Impossible', par: 360,
+    sub: 'The final trial of Chapter 1. Lasers, spikes and drones everywhere.',
+    relics: ['Shard of the Impossible', 'Crown of Chapter One'],
+    relicIds: [3, 8], hearts: 2, hazard: 1.25,
+    palette: { sky1: 0x1a0306, sky2: 0x05020c, neb: [1.0, 0.12, 0.18], neb2: [0.45, 0.05, 0.6], crystal: 0xff3b4f, trim: 0xffb14a, fog: 0x0c0306, sun: 0xffc2b0, planet: 0xff2e3e, aur: [1.0, 0.25, 0.2] },
+    map: [
+      '#########################',
+      '#S.X.R.C C.#...X...R....#',
+      '#.#######.##.#####.###.##',
+      '#.#...D...#..#*..X.#...##',
+      '#.#.#####.#.##.###.#.####',
+      '#.X.#.R.#.C .#..R..#..X.#',
+      '###.#...#.####.#####.##.#',
+      '#H..#.X.#....D.....#....#',
+      '#.###.#.######.###.#.####',
+      '#.~~M.#...R..X.#H#.C C..#',
+      '#.#####.#####.##.#.####.#',
+      '#...X...#*..#..X.#...R..#',
+      '###.###.#.#.####.###.####',
+      '#.#.#.R.#.#....D...#....#',
+      '#.#.#...#.####.###.#.##.#',
+      '#.C.#.X.#.C .#...#.X..#.#',
+      '#.#.###.#.#.X#.R.#.##.#.#',
+      '#...#...#.#..#...#..#.#.#',
+      '#.###.###.##.#####.##.#.#',
+      '#.#...D...#..R.X.C ....B#',
+      '#.#.#####.#.#######.### #',
+      '#.X..R..C .*#.D...X.M~. #',
+      '#####.#####.#.#####.###.#',
+      '#.....X...R...C C...D..E#',
+      '#########################',
     ],
   },
 ];
