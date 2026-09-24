@@ -2,9 +2,11 @@
 
 A dreamy third-person space-maze game. Guide a small astronaut across floating crystal islands beneath the northern lights. In each level you collect three star shards to wake the portal, dodge drones, lasers, spike traps and crumbling tiles, and hunt for hidden relics.
 
-## Download & play
+## Play
 
-Get the latest **Aurora-win64.zip** from [Releases](../../releases). Unzip it and run `Aurora.exe`.
+**In your browser, no install:** download or clone this repo and open `index.html` in Chrome, Edge or Firefox. The game is prebuilt (`game.bundle.js`), so nothing else is needed. You can also turn on GitHub Pages (Settings → Pages → deploy from `main`) and play it online.
+
+**Desktop app:** get the latest **Aurora-win64.zip** from [Releases](../../releases). Unzip it and run `Aurora.exe`.
 
 > Windows may show "Windows protected your PC" because the game isn't code-signed. Click **More info → Run anyway**.
 
