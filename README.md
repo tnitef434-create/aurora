@@ -10,7 +10,8 @@ Download **Aurora-Setup.exe** from [Releases](../../releases) and run it. It ins
 
 ## Features
 
-- Chapter 1: 7 levels: The Drift, Nebula Gardens, The Core, Shattered Halo, Laser Garden, Aurora's Heart and **Level Impossible** (Chapter 2 coming soon)
+- Chapter 1: 7 levels: The Drift, Nebula Gardens, The Core, Shattered Halo, Laser Garden, Aurora's Heart and **Level Impossible**
+- Chapter 2 demo (1.7): **Whispering Grove**, a jungle island with insects that hunt you
 - Hazards: patrol drones, rotating lasers, spike traps, crumbling tiles, moving platforms and bounce pads
 - Hearts, par times and gold/silver/bronze medals
 - 14 hidden relics, each with its own design, saved to your Collection

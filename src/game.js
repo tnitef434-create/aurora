@@ -29,6 +29,20 @@ import pad from '../models/pad.glb';
 import drone from '../models/drone.glb';
 import emitter from '../models/emitter.glb';
 import spikes from '../models/spikes.glb';
+import grass_1 from '../models/grass_1.glb';
+import grass_2 from '../models/grass_2.glb';
+import grass_3 from '../models/grass_3.glb';
+import tree_1 from '../models/tree_1.glb';
+import tree_2 from '../models/tree_2.glb';
+import tree_3 from '../models/tree_3.glb';
+import bush_1 from '../models/bush_1.glb';
+import bush_2 from '../models/bush_2.glb';
+import thorns from '../models/thorns.glb';
+import insect from '../models/insect.glb';
+import island from '../models/island.glb';
+import islet_1 from '../models/islet_1.glb';
+import islet_2 from '../models/islet_2.glb';
+import player_nature from '../models/player_nature.glb';
 import relic_0 from '../models/relic_0.glb';
 import relic_1 from '../models/relic_1.glb';
 import relic_2 from '../models/relic_2.glb';
@@ -41,11 +55,17 @@ import relic_8 from '../models/relic_8.glb';
 import relic_9 from '../models/relic_9.glb';
 import relic_10 from '../models/relic_10.glb';
 import relic_11 from '../models/relic_11.glb';
+import relic_12 from '../models/relic_12.glb';
+import relic_13 from '../models/relic_13.glb';
 
-const MODEL_DATA = { tile_1, tile_2, tile_3, crystal_1, crystal_2, crystal_3, asteroid_1, asteroid_2, flora_1, flora_2, shard, portal, player, platform, pad, drone, emitter, spikes, relic_0, relic_1, relic_2, relic_3, relic_4, relic_5, relic_6, relic_7, relic_8, relic_9, relic_10, relic_11 };
-const INSTANCED = ['tile_1', 'tile_2', 'tile_3', 'crystal_1', 'crystal_2', 'crystal_3', 'asteroid_1', 'asteroid_2', 'flora_1', 'flora_2'];
+const MODEL_DATA = { tile_1, tile_2, tile_3, crystal_1, crystal_2, crystal_3, asteroid_1, asteroid_2, flora_1, flora_2, shard, portal, player, platform, pad, drone, emitter, spikes, relic_0, relic_1, relic_2, relic_3, relic_4, relic_5, relic_6, relic_7, relic_8, relic_9, relic_10, relic_11, relic_12, relic_13, grass_1, grass_2, grass_3, tree_1, tree_2, tree_3, bush_1, bush_2, thorns, insect, island, islet_1, islet_2, player_nature };
+const INSTANCED = ['tile_1', 'tile_2', 'tile_3', 'crystal_1', 'crystal_2', 'crystal_3', 'asteroid_1', 'asteroid_2', 'flora_1', 'flora_2', 'grass_1', 'grass_2', 'grass_3', 'tree_1', 'tree_2', 'tree_3', 'bush_1', 'bush_2', 'islet_1', 'islet_2'];
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+// levels are numbered within their chapter (chapter 2 starts again at level 1)
+const chapterOf = i => LEVELS[i].chapter || 1;
+const levelNum = i => LEVELS.slice(0, i + 1).filter(l => (l.chapter || 1) === chapterOf(i)).length;
+const lastOfChapter = i => i === LEVELS.length - 1 || chapterOf(i + 1) !== chapterOf(i);
 const lerp = (a, b, t) => a + (b - a) * t;
 const damp = (a, b, rate, dt) => lerp(a, b, 1 - Math.exp(-rate * dt));
 
@@ -329,6 +349,12 @@ export async function createGame(opts) {
       case 'Visor': m.emissiveIntensity = 1.1; m.envMapIntensity = 2.5; break;
       case 'Danger': m.emissiveIntensity = 3.5; break;
       case 'Relic': m.emissive.set(pal.aur ? new THREE.Color(...pal.aur) : 0x7fffd4); m.emissiveIntensity = 3.5; break;
+      case 'Wing': m.transparent = true; m.opacity = .42; m.depthWrite = false; m.side = THREE.DoubleSide; m.emissiveIntensity = 1.2; break;
+      case 'InsectEye': m.emissiveIntensity = 4; break;
+      case 'Mushroom': m.emissiveIntensity = 2.2; break;
+      case 'Water': m.transparent = true; m.opacity = .8; m.emissiveIntensity = 1.4; break;
+      case 'ThornTip': m.emissiveIntensity = 2; break;
+      case 'Leaf': case 'Leaf2': case 'Leaf3': m.side = THREE.DoubleSide; break;
       case 'RelicGhost': m.transparent = true; m.opacity = .28; m.color.set(0xffffff); m.emissive.set(0x9fffe0); m.emissiveIntensity = .5; m.metalness = 0; m.depthWrite = false; break;
       default:
         // relic materials (made in Blender, named R*) glow harder in-game so bloom picks them up
@@ -339,7 +365,7 @@ export async function createGame(opts) {
     return m;
   }
   function cloneModel(name, remap = {}) {
-    const o = name === 'player' ? SkeletonUtils.clone(models[name]) : models[name].clone(true);
+    const o = name.startsWith('player') ? SkeletonUtils.clone(models[name]) : models[name].clone(true);
     o.traverse(c => { if (c.isMesh) { const k = remap['*'] || remap[c.material.name] || c.material.name; c.material = mat(c.material, k); c.castShadow = true; c.receiveShadow = true; } });
     return o;
   }
@@ -358,7 +384,7 @@ export async function createGame(opts) {
   /* ---------- level state ---------- */
   let L = null;
   let levelIndex = 0;
-  const FLOORCH = '.SE*B#DRXH';
+  const FLOORCH = '.SE*B#DRXHI';
   const cellCh = (r, c) => (L.map[r] && L.map[r][c]) || ' ';
   const cellPos = (r, c) => new THREE.Vector3((c - (L.W - 1) / 2) * TILE, 0, (r - (L.H - 1) / 2) * TILE);
   const cellOf = (x, z) => [Math.round(z / TILE + (L.H - 1) / 2), Math.round(x / TILE + (L.W - 1) / 2)];
@@ -387,18 +413,26 @@ export async function createGame(opts) {
     const def = LEVELS[i];
     pal = def.palette;
     const map = def.map, Hh = map.length, W = Math.max(...map.map(r => r.length));
-    L = { def, map, W, H: Hh, group: new THREE.Group(), shards: [], platforms: [], pads: [], crumbles: new Map(), drones: [], lasers: [], spikes: [], relics: [], portal: null, start: null, explored: new Set() };
+    L = { def, map, W, H: Hh, group: new THREE.Group(), shards: [], platforms: [], pads: [], crumbles: new Map(), drones: [], lasers: [], spikes: [], insects: [], relics: [], portal: null, start: null, explored: new Set() };
     scene.add(L.group);
     const rnd = (() => { let s = 1234 + i * 99; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
     const M4 = (x, y, z, ry = 0, s = 1, sy = s) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(s, sy, s));
     const saved = (getRelics && getRelics(i)) || [];
 
+    const jungle = def.theme === 'jungle';
+    const treeItems = [[], [], []];
     const tiles = [[], [], []], crystals = [[], [], []], flora = [[], []];
     let relicIdx = 0;
     for (let r = 0; r < Hh; r++) for (let c = 0; c < W; c++) {
       const ch = cellCh(r, c), p = cellPos(r, c);
       if (FLOORCH.includes(ch)) tiles[Math.floor(rnd() * 3)].push(M4(p.x, 0, p.z, Math.floor(rnd() * 4) * Math.PI / 2));
-      if (ch === '#') {
+      if (ch === '#' && jungle) {
+        // one big jungle tree per wall cell, plus a fern at its feet now and then
+        const v = Math.floor(rnd() * 3), tx = p.x + (rnd() - .5) * .5, tz = p.z + (rnd() - .5) * .5, ry = rnd() * 6.28, ts = .66 + rnd() * .1, tsy = .7 + rnd() * .14;
+        treeItems[v].push({ x: tx, z: tz, ry, s: ts, sy: tsy, k: 1, idx: crystals[v].length });
+        crystals[v].push(M4(tx, 0, tz, ry, ts, tsy));   // slim and low so paths stay visible and the camera sees over them
+        if (rnd() < .5) { const a = rnd() * 6.28; flora[0].push(M4(p.x + Math.cos(a) * 1.7, 0, p.z + Math.sin(a) * 1.7, rnd() * 6.28, .9 + rnd() * .5)); }
+      } else if (ch === '#') {
         crystals[Math.floor(rnd() * 3)].push(M4(p.x, 0, p.z, rnd() * 6.28, 1.3 + rnd() * .15, 1.15 + rnd() * .35));
         for (let k = 0; k < 2; k++) {
           const a = rnd() * 6.28;
@@ -435,7 +469,7 @@ export async function createGame(opts) {
         L.crumbles.set(r * 100 + c, { obj: o, pos: p.clone(), state: 'idle', t: 0, vy: 0 });
       }
       if (ch === 'X') {
-        const o = cloneModel('spikes'); o.position.set(p.x, -1.3, p.z); L.group.add(o);
+        const o = cloneModel(jungle ? 'thorns' : 'spikes'); o.position.set(p.x, -1.3, p.z); L.group.add(o);
         L.spikes.push({ obj: o, pos: p.clone(), phase: ((r * 7 + c * 3) % 10) / 10, h: -1.3, warned: false });
       }
       if (ch === 'R') {
@@ -460,6 +494,16 @@ export async function createGame(opts) {
         const o = cloneModel('drone'); o.position.set(p.x, 1.1, p.z); L.group.add(o);
         const light = new THREE.PointLight(0xff3348, 4, 7, 2); o.add(light);
         L.drones.push({ obj: o, a: A_, b: B_, pos: p.clone().setY(1.1), t: A_.distanceTo(p) / Math.max(A_.distanceTo(B_), .01), dir: 1, len: Math.max(A_.distanceTo(B_), .01), speed: (3 + i * .3) * (def.hazard || 1) });
+      }
+      if (ch === 'I') {
+        // insects fly the maze on their own (see stepInsects); each gets its own eye material so it can flare
+        const o = cloneModel('insect'); o.scale.setScalar(1.25); o.position.set(p.x, 1.3, p.z); L.group.add(o);
+        let eye = null;
+        o.traverse(c => { if (c.isMesh && c.material.name === 'InsectEye') { if (!eye) eye = c.material.clone(); c.material = eye; } });
+        const k = L.insects.length;
+        L.insects.push({ obj: o, eye, wingL: o.getObjectByName('WingL'), wingR: o.getObjectByName('WingR'),
+          pos: p.clone().setY(1.3), home: [r, c], cell: [r, c], next: [r, c], prev: null, state: 'wander', t: 0, seen: 0, path: 0,
+          dir: new THREE.Vector3(0, 0, 1), heading: 0, speed: (2.4 + (k % 3) * .35) * (def.hazard || 1), sense: 9 + (k % 2) * 2.5, seed: k * 1.7 + r * .3 + c * .7, buzz: 0 });
       }
       if (ch === 'E') {
         const o = cloneModel('portal'); o.position.copy(p);
@@ -487,22 +531,52 @@ export async function createGame(opts) {
         o.position.copy(cellPos(r, c));
       }
     }
-    tiles.forEach((m, k) => m.length && instanced('tile_' + (k + 1), m).forEach(x => L.group.add(x)));
-    crystals.forEach((m, k) => m.length && instanced('crystal_' + (k + 1), m).forEach(x => L.group.add(x)));
-    flora.forEach((m, k) => m.length && instanced('flora_' + (k + 1), m, { cast: false }).forEach(x => L.group.add(x)));
+    const TILEM = jungle ? 'grass_' : 'tile_', WALLM = jungle ? 'tree_' : 'crystal_', FLORAM = jungle ? 'bush_' : 'flora_';
+    tiles.forEach((m, k) => m.length && instanced(TILEM + (k + 1), m).forEach(x => L.group.add(x)));
+    L.trees = [];
+    crystals.forEach((m, k) => {
+      if (!m.length) return;
+      const meshes = instanced(WALLM + (k + 1), m); meshes.forEach(x => L.group.add(x));
+      if (jungle) L.trees.push({ meshes, items: treeItems[k] });
+    });
+    flora.forEach((m, k) => m.length && instanced(FLORAM + (k + 1), m, { cast: false }).forEach(x => L.group.add(x)));
 
     const size = Math.max(W, Hh) * TILE;
-    const far = [[], [], []];
-    for (let k = 0; k < 34; k++) {
-      const a = rnd() * 6.28, d = size * 1.15 + rnd() * size * 1.6;
-      far[k % 3].push(M4(Math.cos(a) * d, -22 - rnd() * 45 + (rnd() < .3 ? 34 : 0), Math.sin(a) * d, rnd() * 6.28, 1.5 + rnd() * 3.5));
+    if (jungle) {
+      // the maze sits on a big floating island: a rocky body under it, a ring of forest around it,
+      // and smaller islands drifting in space all around
+      const halfDiag = Math.hypot(W, Hh) * TILE / 2, rad = halfDiag * 1.18;
+      const isl = cloneModel('island'); isl.scale.set(rad, rad * .55, rad); isl.position.y = -.42;
+      isl.traverse(c => { if (c.isMesh) c.castShadow = false; }); L.group.add(isl);
+      const edgeTrees = [[], [], []], edgeFlora = [[], []];
+      for (let k = 0; k < 110; k++) {
+        const a = rnd() * 6.28, d = rad * (.55 + rnd() * .37);
+        const x = Math.cos(a) * d, z = Math.sin(a) * d;
+        if (Math.abs(x) < W * TILE / 2 + 2.5 && Math.abs(z) < Hh * TILE / 2 + 2.5) continue;
+        edgeTrees[k % 3].push(M4(x, -.3, z, rnd() * 6.28, .8 + rnd() * .5, .8 + rnd() * .6));
+        if (rnd() < .6) edgeFlora[k % 2].push(M4(x + 2, -.3, z + 1, rnd() * 6.28, 1 + rnd()));
+      }
+      edgeTrees.forEach((m, k) => m.length && instanced('tree_' + (k + 1), m, { receive: false }).forEach(x => L.group.add(x)));
+      edgeFlora.forEach((m, k) => m.length && instanced('bush_' + (k + 1), m, { cast: false }).forEach(x => L.group.add(x)));
+      const far = [[], []];
+      for (let k = 0; k < 22; k++) {
+        const a = rnd() * 6.28, d = rad * 1.6 + rnd() * size * 2.2;
+        far[k % 2].push(M4(Math.cos(a) * d, -40 + rnd() * 70, Math.sin(a) * d, rnd() * 6.28, 6 + rnd() * 16, 5 + rnd() * 10));
+      }
+      far.forEach((m, k) => instanced('islet_' + (k + 1), m, { cast: false, receive: false }).forEach(x => L.group.add(x)));
+    } else {
+      const far = [[], [], []];
+      for (let k = 0; k < 34; k++) {
+        const a = rnd() * 6.28, d = size * 1.15 + rnd() * size * 1.6;
+        far[k % 3].push(M4(Math.cos(a) * d, -22 - rnd() * 45 + (rnd() < .3 ? 34 : 0), Math.sin(a) * d, rnd() * 6.28, 1.5 + rnd() * 3.5));
+      }
+      far.forEach((m, k) => instanced('tile_' + (k + 1), m, { cast: false }).forEach(x => L.group.add(x)));
     }
-    far.forEach((m, k) => instanced('tile_' + (k + 1), m, { cast: false }).forEach(x => L.group.add(x)));
     asteroidState.length = 0;
     const ast = [[], []];
     for (let k = 0; k < 90; k++) {
       const a = rnd() * 6.28, d = size * 1.1 + rnd() * size * 1.8;
-      asteroidState.push({ p: new THREE.Vector3(Math.cos(a) * d, -50 + rnd() * 90, Math.sin(a) * d), s: .6 + rnd() * 3.2, rot: new THREE.Euler(rnd() * 6, rnd() * 6, rnd() * 6), spin: new THREE.Vector3(rnd() - .5, rnd() - .5, rnd() - .5).multiplyScalar(.4), orbit: (rnd() - .5) * .01, v: k % 2, idx: ast[k % 2].length });
+      asteroidState.push({ p: new THREE.Vector3(Math.cos(a) * d, jungle ? 45 + rnd() * 110 : -50 + rnd() * 90, Math.sin(a) * d), s: .6 + rnd() * 3.2, rot: new THREE.Euler(rnd() * 6, rnd() * 6, rnd() * 6), spin: new THREE.Vector3(rnd() - .5, rnd() - .5, rnd() - .5).multiplyScalar(.4), orbit: (rnd() - .5) * .01, v: k % 2, idx: ast[k % 2].length });
       ast[k % 2].push(new THREE.Matrix4());
     }
     asteroidMeshes = [instanced('asteroid_1', ast[0], { cast: false }), instanced('asteroid_2', ast[1], { cast: false })];
@@ -515,6 +589,9 @@ export async function createGame(opts) {
     const sunDir = new THREE.Vector3(i % 2 ? -.8 : .9, .55, i % 3 === 2 ? .7 : -.35).normalize();
     planetU.sunDir.value.copy(sunDir);
     sun.color.set(pal.sun); hemi.color.set(pal.trim).lerp(new THREE.Color(0xffffff), .6); hemi.groundColor.set(pal.fog);
+    // the island is lit like a clear night under the stars: cool sky light, warm low sun, dark earth bounce
+    if (jungle) { hemi.color.set(0x8fb0e8); hemi.groundColor.set(0x0c1408); hemi.intensity = .32; sun.intensity = 1.45; }
+    else { hemi.intensity = .45; sun.intensity = 1.9; }
     sun.position.copy(sunDir).multiplyScalar(size * 1.2); sun.target.position.set(0, 0, 0);
     const sc = sun.shadow.camera; sc.left = sc.bottom = -size * .8; sc.right = sc.top = size * .8; sc.near = 1; sc.far = size * 3; sc.updateProjectionMatrix();
     sunSprite.material.color.set(pal.sun);
@@ -527,11 +604,12 @@ export async function createGame(opts) {
     // player (rigged + animated)
     if (P.obj) { scene.remove(P.obj); }
     P.obj = new THREE.Group();
-    P.model = cloneModel('player');
+    const pm = jungle ? 'player_nature' : 'player';
+    P.model = cloneModel(pm);
     P.obj.add(P.model); scene.add(P.obj);
     P.mixer = new THREE.AnimationMixer(P.model);
     P.actions = {};
-    for (const clip of clips.player) P.actions[clip.name] = P.mixer.clipAction(clip);
+    for (const clip of clips[pm]) P.actions[clip.name] = P.mixer.clipAction(clip);
     P.anim = null; playAnim('Idle', 0);
   }
 
@@ -719,6 +797,8 @@ export async function createGame(opts) {
     dead() { [392, 311.13, 261.63, 196].forEach((f, i) => A.tone({ f, at: i * .16, dur: .7, vol: .07, type: 'triangle', send: .7 })); },
     crack() { A.noise({ dur: .25, from: 3500, to: 800, vol: .08, send: .1, q: 3 }); A.tone({ f: 160, to: 90, type: 'square', dur: .08, vol: .03, send: 0 }); },
     crumble() { A.noise({ dur: .9, from: 900, to: 120, vol: .1, send: .5 }); },
+    buzz(p) { if (P.pos.distanceTo(p) > 14) return; A.tone({ f: 190, to: 260, type: 'sawtooth', dur: .35, vol: .025, send: .1 }); A.tone({ f: 380, to: 520, type: 'square', dur: .3, vol: .012, send: 0 }); },
+    windup(p) { if (P.pos.distanceTo(p) > 16) return; A.tone({ f: 220, to: 880, type: 'sawtooth', dur: .5, vol: .035, send: .15 }); A.noise({ dur: .45, from: 800, to: 5000, vol: .03, send: .05, q: 3 }); },
     spikeWarn() { A.tone({ f: 880, dur: .06, vol: .03, type: 'square', send: .05 }); },
     spike() { A.noise({ dur: .12, from: 6000, to: 2000, vol: .06, send: .05, q: 4 }); },
     enter() {
@@ -770,10 +850,10 @@ export async function createGame(opts) {
     time = 0; P.deathsRun = 0; updateShardHud(); updateHearts(); updateRelicHud(); renderHints();
     closeOverlay(true);
     onAttempt && onAttempt(i);
-    H.lvl.textContent = `${T('level')} ${i + 1} · ${L.def.name}`;
+    H.lvl.textContent = `${T('level')} ${levelNum(i)} · ${L.def.name}`;
     H.par.textContent = `${T('par')} ${fmtTime(L.def.par)}`;
     H.complete.classList.remove('show');
-    H.title.querySelector('small').textContent = `${T('level')} ${i + 1}`;
+    H.title.querySelector('small').textContent = `${T('level')} ${levelNum(i)}`;
     H.title.querySelector('h1').textContent = L.def.name;
     H.title.querySelector('p').textContent = L.def.sub;
     H.title.classList.remove('show'); void H.title.offsetWidth; H.title.classList.add('show');
@@ -883,15 +963,15 @@ export async function createGame(opts) {
     const relicsNow = L.relics.filter(r => r.taken && !r.had).map(r => r.idx);
     if (onRelic) relicsNow.forEach(idx => onRelic(levelIndex, idx));
     const res = onLevelComplete(levelIndex, time, medal, relicsNow, P.deathsRun || 0) || {};
-    const last = levelIndex === LEVELS.length - 1;
+    const last = lastOfChapter(levelIndex);
     const found = L.relics.filter(r => r.had || r.taken).length;
     H.complete.querySelector('.g-medal').className = 'g-medal ' + medal;
     H.complete.querySelector('.g-medal').innerHTML = `<span>${T(medal)}</span>`;
-    H.complete.querySelector('small').textContent = `${T('level')} ${levelIndex + 1} · ${L.def.name}`;
-    H.complete.querySelector('h1').textContent = last ? T('finalT') : T('complete');
+    H.complete.querySelector('small').textContent = `${T('level')} ${levelNum(levelIndex)} · ${L.def.name}`;
+    H.complete.querySelector('h1').textContent = last ? (L.def.demo ? 'Demo complete' : T('finalT').replace(/1/, chapterOf(levelIndex))) : T('complete');
     H.complete.querySelector('.g-stats').innerHTML =
       `<div><span>${T('time')}</span><b>${fmtTime(time)}</b></div><div><span>${T('par')}</span><b>${fmtTime(L.def.par)}</b></div><div><span>${T('best')}</span><b>${fmtTime(res.best ?? time)}</b></div><div><span>${T('relics')}</span><b>◆ ${found}/${L.relics.length}</b></div>` +
-      (res.newBest ? `<em>${T('newBest')}</em>` : '') + (last ? `<p>${T('finalS')}</p>` : '');
+      (res.newBest ? `<em>${T('newBest')}</em>` : '') + (last ? `<p>${L.def.demo ? 'Chapter 2 continues in a future update. Thanks for playing the demo!' : T('finalS')}</p>` : '');
     const padNow = showPad();
     H.complete.querySelector('[data-a="next"]').innerHTML = `<span class="gk">${padNow ? '✕' : 'Enter'}</span>${T('cont')}`;
     H.complete.querySelector('[data-a="menu"]').innerHTML = `<span class="gk">${padNow ? '○' : 'Esc'}</span>${T('menu')}`;
@@ -907,7 +987,7 @@ export async function createGame(opts) {
     A.tone({ f: 660, to: 990, type: 'triangle', dur: .1, vol: .08, send: .2 });
     await fade(1, 500);
     H.complete.classList.remove('show');
-    if (levelIndex < LEVELS.length - 1) start(levelIndex + 1);
+    if (!lastOfChapter(levelIndex)) start(levelIndex + 1);
     else { stop(); onFinish(); H.fade.style.opacity = 0; }
   }
   async function quitFromComplete() {
@@ -990,8 +1070,119 @@ export async function createGame(opts) {
     }
   }
 
+  /* ---------- trees between the camera and the player sink into the ground so they never hide you ---------- */
+  const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpS = new THREE.Vector3(), tmpP = new THREE.Vector3(), upY = new THREE.Vector3(0, 1, 0);
+  function sinkTrees(dt) {
+    const cx = camera.position.x, cz = camera.position.z, px = P.pos.x, pz = P.pos.z;
+    const dx = px - cx, dz = pz - cz, dd = dx * dx + dz * dz || 1;
+    for (const grp of L.trees) {
+      let dirty = false;
+      for (const it of grp.items) {
+        const t = clamp(((it.x - cx) * dx + (it.z - cz) * dz) / dd, 0, 1);
+        const ex = cx + dx * t - it.x, ez = cz + dz * t - it.z;
+        const block = t < .97 && ex * ex + ez * ez < 2.6 * 2.6;
+        const k = damp(it.k, block ? .12 : 1, block ? 9 : 5, dt);
+        if (Math.abs(k - it.k) > .002) {
+          it.k = k; dirty = true;
+          tmpM.compose(tmpP.set(it.x, 0, it.z), tmpQ.setFromAxisAngle(upY, it.ry), tmpS.set(it.s * (.55 + .45 * k), it.sy * k, it.s * (.55 + .45 * k)));
+          for (const im of grp.meshes) im.setMatrixAt(it.idx, tmpM);
+        }
+      }
+      if (dirty) for (const im of grp.meshes) im.instanceMatrix.needsUpdate = true;
+    }
+  }
+
+  /* ---------- insects: wander the maze, notice you, chase along the paths, then wind up and lunge ---------- */
+  const walkable = (r, c) => { const ch = cellCh(r, c); return ch !== '#' && ch !== ' ' && ch !== '~'; };
+  function losClear(a, b) {
+    const n = Math.ceil(a.distanceTo(b) / .6);
+    for (let k = 1; k < n; k++) { const x = lerp(a.x, b.x, k / n), z = lerp(a.z, b.z, k / n); const [r, c] = cellOf(x, z); if (cellCh(r, c) === '#') return false; }
+    return true;
+  }
+  function stepToward(from, to) {   // first step of the shortest path through the maze (BFS)
+    const key = (r, c) => r * 200 + c, prev = new Map([[key(...from), null]]), q = [from];
+    while (q.length) {
+      const [r, c] = q.shift();
+      if (r === to[0] && c === to[1]) break;
+      for (const [dr, dc] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+        const nr = r + dr, nc = c + dc, k = key(nr, nc);
+        if (!prev.has(k) && walkable(nr, nc)) { prev.set(k, [r, c]); q.push([nr, nc]); }
+      }
+    }
+    let cur = to; if (!prev.has(key(...to))) return from;
+    while (prev.get(key(...cur)) && !(prev.get(key(...cur))[0] === from[0] && prev.get(key(...cur))[1] === from[1])) cur = prev.get(key(...cur));
+    return cur;
+  }
+  function wanderNext(b) {
+    const [r, c] = b.cell, opts = [];
+    for (const [dr, dc] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+      const nr = r + dr, nc = c + dc;
+      if (!walkable(nr, nc)) continue;
+      const back = b.prev && b.prev[0] === nr && b.prev[1] === nc;
+      const far = Math.abs(nr - b.home[0]) + Math.abs(nc - b.home[1]) > 6;   // stays roughly in its own territory
+      opts.push({ rc: [nr, nc], w: (back ? .15 : 1) * (far ? .3 : 1) });
+    }
+    if (!opts.length) return b.cell;
+    let x = Math.random() * opts.reduce((s, o) => s + o.w, 0);
+    for (const o of opts) { x -= o.w; if (x <= 0) return o.rc; }
+    return opts[0].rc;
+  }
+  function stepInsects(dt) {
+    const pp = P.pos.clone().setY(1.2);
+    for (const b of L.insects) {
+      b.t += dt;
+      const dist = Math.hypot(pp.x - b.pos.x, pp.z - b.pos.z);
+      const sees = !P.dying && dist < b.sense && losClear(b.pos, pp);
+      if (b.state === 'wander' || b.state === 'chase') {
+        if (sees) { if (b.state === 'wander') { b.state = 'chase'; snd.buzz && snd.buzz(b.pos); } b.seen = 0; }
+        else if (b.state === 'chase' && (b.seen += dt) > 2.6) b.state = 'wander';
+        if (b.state === 'chase' && sees && dist < 3.6 && b.t > .6) { b.state = 'windup'; b.t = 0; b.dir.set(pp.x - b.pos.x, 0, pp.z - b.pos.z).normalize(); snd.windup && snd.windup(b.pos); }
+      }
+      if (b.state === 'wander' || b.state === 'chase') {
+        const tgt = cellPos(...b.next);
+        const d = Math.hypot(tgt.x - b.pos.x, tgt.z - b.pos.z);
+        if (d < .25 || (b.path -= dt) < 0) {
+          b.path = .35;
+          if (d < .25) { b.prev = b.cell; b.cell = b.next; }
+          b.next = b.state === 'chase' ? stepToward(b.cell, cellOf(pp.x, pp.z)) : (d < .25 ? wanderNext(b) : b.next);
+        }
+        const t2 = cellPos(...b.next);
+        // erratic, insect-like flight: weave side to side along the path
+        const v = new THREE.Vector3(t2.x - b.pos.x, 0, t2.z - b.pos.z);
+        if (v.lengthSq() > .001) {
+          v.normalize(); b.dir.lerp(v, 1 - Math.exp(-8 * dt)).normalize();
+          const side = new THREE.Vector3(-b.dir.z, 0, b.dir.x).multiplyScalar(Math.sin(b.t * 5 + b.seed) * .9);
+          const sp = b.speed * (b.state === 'chase' ? 1.55 : 1);
+          b.pos.addScaledVector(b.dir, sp * dt).addScaledVector(side, dt);
+        }
+        b.pos.y = damp(b.pos.y, 1.3 + Math.sin(b.t * 2.3 + b.seed) * .25, 4, dt);
+      } else if (b.state === 'windup') {
+        // hovers, rises and shakes, eyes flaring, while it locks on
+        b.dir.lerp(new THREE.Vector3(pp.x - b.pos.x, 0, pp.z - b.pos.z).normalize(), 1 - Math.exp(-6 * dt)).normalize();
+        b.pos.y = damp(b.pos.y, 1.9, 6, dt);
+        if (b.t > .55) { b.state = 'lunge'; b.t = 0; }
+      } else if (b.state === 'lunge') {
+        const nx = b.pos.x + b.dir.x * 13 * dt, nz = b.pos.z + b.dir.z * 13 * dt;
+        const [r, c] = cellOf(nx, nz);
+        if (cellCh(r, c) === '#' || b.t > .5) { b.state = 'retreat'; b.t = 0; if (cellCh(r, c) === '#') emit(b.pos.clone(), 0x9fe870, 14, 3, .5); }
+        else { b.pos.x = nx; b.pos.z = nz; }
+        b.pos.y = damp(b.pos.y, 1.0, 10, dt);
+      } else if (b.state === 'retreat') {
+        const away = new THREE.Vector3(b.pos.x - pp.x, 0, b.pos.z - pp.z).normalize();
+        const nx = b.pos.x + away.x * 3 * dt, nz = b.pos.z + away.z * 3 * dt;
+        if (walkable(...cellOf(nx, nz))) { b.pos.x = nx; b.pos.z = nz; }
+        b.pos.y = damp(b.pos.y, 2.1, 3, dt);
+        if (b.t > 1.3) { b.state = 'wander'; b.t = 0; b.cell = cellOf(b.pos.x, b.pos.z); b.next = b.cell; b.prev = null; }
+      }
+      if (b.state !== 'retreat' && Math.hypot(P.pos.x - b.pos.x, P.pos.z - b.pos.z) < 1.0 && Math.abs(P.pos.y + 1 - b.pos.y) < 1.1) {
+        hurt(b.pos); b.state = 'retreat'; b.t = 0;
+      }
+    }
+  }
+
   function step(dt, inp) {
     stepHazards(dt);
+    if (L.insects.length) stepInsects(dt);
     if (P.plat && P.grounded) P.pos.add(P.plat.delta);
     P.invuln = Math.max(0, P.invuln - dt); P.hitT = Math.max(0, P.hitT - dt);
 
@@ -1164,6 +1355,15 @@ export async function createGame(opts) {
       d.obj.rotation.y = damp(d.obj.rotation.y, Math.atan2(dirv.x, dirv.z) + Math.PI, 6, dt);
       d.obj.rotation.z = Math.sin(t * 2) * .1;
     }
+    for (const b of L.insects) {
+      const flap = Math.sin(t * (b.state === 'windup' || b.state === 'lunge' ? 95 : 60) + b.seed) * .9;
+      if (b.wingL) b.wingL.rotation.z = flap; if (b.wingR) b.wingR.rotation.z = -flap;
+      const shake = b.state === 'windup' ? (Math.random() - .5) * .12 : 0;
+      b.obj.position.set(b.pos.x + shake, b.pos.y + Math.sin(t * 9 + b.seed) * .05, b.pos.z + shake);
+      b.heading = damp(b.heading, Math.atan2(b.dir.x, b.dir.z) + Math.PI, 10, dt);
+      b.obj.rotation.set(b.state === 'lunge' ? -.35 : b.state === 'windup' ? .25 : Math.sin(t * 3 + b.seed) * .08, b.heading, Math.sin(t * 4 + b.seed) * .12);
+      if (b.eye) b.eye.emissiveIntensity = damp(b.eye.emissiveIntensity, b.state === 'windup' || b.state === 'lunge' ? 14 : b.state === 'chase' ? 7 : 3.5, 10, dt);
+    }
     let humNear = 99;
     for (const l of L.lasers) {
       l.beam.rotation.y = l.angle;
@@ -1201,6 +1401,7 @@ export async function createGame(opts) {
     const sh = cam.shake * (S.reduceMotion ? 0 : S.shake / 50);
     if (sh > .001) camera.position.add(new THREE.Vector3((rnd() - .5) * sh, (rnd() - .5) * sh, (rnd() - .5) * sh));
     camera.lookAt(cam.target);
+    if (L.trees && L.trees.length) sinkTrees(dt);
     cam.fov = damp(cam.fov, S.fov + (info.sprinting ? 7 : 0) + (P.launched ? 10 : 0), 4, dt);
     if (Math.abs(camera.fov - cam.fov) > .01) { camera.fov = cam.fov; camera.updateProjectionMatrix(); }
   }
@@ -1217,11 +1418,13 @@ export async function createGame(opts) {
       if (!L.explored.has(r * 100 + c)) continue;
       const ch = cellCh(r, c);
       if (ch === ' ' || ch === '~' || ch === 'M') continue;
-      ctx.fillStyle = ch === '#' ? 'rgba(170,130,255,.55)' : HAZ[ch] || 'rgba(255,255,255,.16)';
+      ctx.fillStyle = ch === '#' ? (L.def.theme === 'jungle' ? 'rgba(90,190,90,.6)' : 'rgba(170,130,255,.55)') : HAZ[ch] || 'rgba(255,255,255,.16)';
       ctx.fillRect(ox + c * s + .5, oy + r * s + .5, s - 1, s - 1);
     }
     const dot = (r, c, col, rad) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(ox + (c + .5) * s, oy + (r + .5) * s, rad, 0, 7); ctx.fill(); };
     L.shards.forEach(sh => { if (!sh.taken && L.explored.has(sh.r * 100 + sh.c)) dot(sh.r, sh.c, '#ffc35a', s * .28); });
+    // insects show up when they're close, as moving orange dots
+    L.insects.forEach(b => { if (P.pos.distanceTo(b.pos) < 14) { const [r, c] = cellOf(b.pos.x, b.pos.z); dot(r + (b.pos.z / TILE - Math.round(b.pos.z / TILE)), c + (b.pos.x / TILE - Math.round(b.pos.x / TILE)), b.state === 'chase' || b.state === 'windup' || b.state === 'lunge' ? '#ff5a3a' : '#ffb030', s * .26); } });
     L.relics.forEach(rl => { if (!rl.taken && L.explored.has(rl.r * 100 + rl.c)) dot(rl.r, rl.c, rl.had ? 'rgba(127,255,212,.35)' : '#7fffd4', s * .24); });
     const [er, ec] = cellOf(L.portal.pos.x, L.portal.pos.z);
     if (L.explored.has(er * 100 + ec)) dot(er, ec, L.portal.active ? '#7ff' : 'rgba(120,220,255,.5)', s * .34);
@@ -1313,7 +1516,7 @@ export async function createGame(opts) {
       return `<div class="ov-lv${k === i ? ' cur' : ''}"><span class="n">${String(k + 1).padStart(2, '0')}</span><span class="nm">${l.name}</span>${medalDot(m)}<b>${b != null ? fmtTime(b) : '—'}</b><small>${n}×</small></div>`;
     }).join('');
     return `<div class="ov-rec">
-      <div class="ov-title"><small>${T('level')} ${i + 1}</small><h2>${def.name}</h2></div>
+      <div class="ov-title"><small>${T('level')} ${levelNum(i)}</small><h2>${def.name}</h2></div>
       <div class="ov-tiles">${tiles.map(([a, b, c, cls], k) => `<div class="ov-tile ${cls || ''}" style="--d:${k * 35}ms"><span>${a}</span><b>${b}</b>${c || ''}</div>`).join('')}</div>
       <div class="ov-cols"><div class="ov-chartbox"><div class="ov-sub">Last ${runs.length || 10} runs</div>${chart}</div>
       <div class="ov-levels"><div class="ov-sub">All levels · best</div>${levelsList}</div></div></div>`;
@@ -1381,7 +1584,7 @@ export async function createGame(opts) {
   }
   requestAnimationFrame(loop);
   window.__auroraTeleport = (r, c) => spawn(cellPos(r, c));
-  window.__auroraDebug = () => ({ pos: P.pos.toArray().map(v => +v.toFixed(2)), state, time: +time.toFixed(2), grounded: P.grounded, shards: P.shardsTaken, hearts: P.hearts, anim: P.anim, paused, running });
+  window.__auroraDebug = () => ({ pos: P.pos.toArray().map(v => +v.toFixed(2)), state, time: +time.toFixed(2), grounded: P.grounded, shards: P.shardsTaken, hearts: P.hearts, anim: P.anim, paused, running, insects: L && L.insects.map(b => [b.state, +b.pos.x.toFixed(1), +b.pos.z.toFixed(1)]) });
 
   /* ---------- settings ---------- */
   function resize() {
@@ -1414,7 +1617,7 @@ export async function createGame(opts) {
     H.hints.style.display = S.tooltips ? '' : 'none';
     H.lock.querySelector('span').textContent = T('click');
     if (L) {
-      H.lvl.textContent = `${T('level')} ${levelIndex + 1} · ${L.def.name}`;
+      H.lvl.textContent = `${T('level')} ${levelNum(levelIndex)} · ${L.def.name}`;
       if (prevDiff !== S.difficulty) P.hearts = Math.min(P.hearts, maxHearts());
       updateHearts();
     }

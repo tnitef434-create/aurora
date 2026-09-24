@@ -484,10 +484,24 @@ body.ingame #root{display:none}
 .ready{height:78px!important}
 .ch-card{min-height:230px!important;overflow:hidden;padding:30px 28px!important}
 .ch-art{position:absolute;inset:0;pointer-events:none;opacity:.55}
-.ch-art i{position:absolute;border-radius:50%;filter:blur(38px)}
+.ch-art i{position:absolute;border-radius:50%;filter:blur(38px);animation:chDrift 9s ease-in-out infinite alternate}
+.ch-art i:nth-child(2){animation-duration:11s;animation-delay:-3s;animation-name:chDrift2}
+.ch-art i:nth-child(3){animation-duration:13s;animation-delay:-6s}
+.ch-card.sel .ch-art{opacity:.8}
+.ch-card::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.07) 45%,transparent 60%);background-size:250% 100%;animation:chSheen 6s ease-in-out infinite}
+.soon::after{display:none}
+@keyframes chDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,30px) scale(1.25)}100%{transform:translate(-120px,-10px) scale(.9)}}
+@keyframes chDrift2{0%{transform:translate(0,0) scale(1.1)}50%{transform:translate(80px,-40px) scale(.85)}100%{transform:translate(20px,-70px) scale(1.2)}}
+@keyframes chSheen{0%{background-position:120% 0}60%,100%{background-position:-60% 0}}
+.reduce .ch-art i,.reduce .ch-card::after{animation:none}
 .ch1 .ch-art i:nth-child(1){width:220px;height:140px;right:-40px;top:-30px;background:#7fffd4}
 .ch1 .ch-art i:nth-child(2){width:200px;height:160px;right:90px;bottom:-80px;background:#b69cff}
 .ch1 .ch-art i:nth-child(3){width:160px;height:120px;right:-30px;bottom:-40px;background:#ff5c8a;opacity:.6}
+.ch2 .ch-art i:nth-child(1){width:220px;height:140px;right:-40px;top:-30px;background:#9be07a}
+.ch2 .ch-art i:nth-child(2){width:200px;height:160px;right:90px;bottom:-80px;background:#2f8a5a}
+.ch2 .ch-art i:nth-child(3){width:160px;height:120px;right:-30px;bottom:-40px;background:#d8ff7a;opacity:.5}
+.ch2 .ch-num{color:#b8ff7a}
+.ch-badge.new{background:linear-gradient(90deg,#b8ff7a,#7fffd4);color:#08140c}
 .soon .ch-art i:nth-child(1){width:200px;height:150px;right:-40px;top:-40px;background:#ff3b4f;opacity:.5}
 .soon .ch-art i:nth-child(2){width:180px;height:140px;right:120px;bottom:-90px;background:#ffb14a;opacity:.4}
 .ch-card > *:not(.ch-art){position:relative}
@@ -1054,7 +1068,8 @@ const LEVEL_CHORDS = [
   [[146.83, 220.00, 293.66, 369.99], [130.81, 196.00, 261.63, 329.63], [123.47, 185.00, 246.94, 311.13], [110.00, 164.81, 220.00, 277.18]],
   [[138.59, 207.65, 261.63, 329.63], [123.47, 185.00, 233.08, 293.66], [116.54, 174.61, 220.00, 277.18], [103.83, 155.56, 207.65, 246.94]],
   [[130.81, 196.00, 246.94, 329.63], [146.83, 220.00, 277.18, 369.99], [164.81, 246.94, 311.13, 392.00], [123.47, 185.00, 246.94, 311.13]],
-  [[110.00, 164.81, 207.65, 261.63], [103.83, 155.56, 196.00, 246.94], [98.00, 146.83, 185.00, 233.08], [116.54, 174.61, 220.00, 277.18]]
+  [[110.00, 164.81, 207.65, 261.63], [103.83, 155.56, 196.00, 246.94], [98.00, 146.83, 185.00, 233.08], [116.54, 174.61, 220.00, 277.18]],
+  [[130.81, 196.00, 261.63, 329.63], [110.00, 164.81, 220.00, 261.63], [87.31, 130.81, 220.00, 261.63], [98.00, 146.83, 196.00, 293.66]]
 ];
 let PROG = { unlocked: 1, best: [], medal: [], relics: {}, runs: {}, stats: {} };
 try { Object.assign(PROG, JSON.parse(localStorage.getItem('aurora-progress') || '{}')); } catch (e) {}
@@ -1093,7 +1108,7 @@ function drawLevelMap(cv, i, W_ = 260, H_ = 138) {
     if (ch === '~' || ch === 'M') { g.fillStyle = hex6(pal.trim); g.globalAlpha = .25; g.fillRect(x + s * .3, y + s * .3, s * .4, s * .4); g.globalAlpha = 1; if (ch === 'M') { g.globalAlpha = .7; g.fillRect(x + 1, y + 1, s - 2, s - 2); g.globalAlpha = 1; } continue; }
     g.fillStyle = ch === 'C' ? 'rgba(255,140,60,.55)' : 'rgba(255,255,255,.2)';
     g.fillRect(x + .6, y + .6, s - 1.2, s - 1.2);
-    if ('DRX'.includes(ch)) dot(r, c, '#ff4060', s * .26, 6);
+    if ('DRXI'.includes(ch)) dot(r, c, ch === 'I' ? '#ffb030' : '#ff4060', s * .26, 6);
     if (ch === 'B') dot(r, c, '#ff7fd6', s * .3, 6);
     if (ch === '*') dot(r, c, '#ffc35a', s * .3, 8);
     if (ch === 'S') { g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.beginPath(); g.arc(x + s / 2, y + s / 2, s * .3, 0, 7); g.stroke(); }
@@ -1102,6 +1117,16 @@ function drawLevelMap(cv, i, W_ = 260, H_ = 138) {
   }
 }
 const fmtT = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
+// chapters: levels carry a chapter number; each chapter's first level is always open,
+// the rest unlock by clearing the level before them in the same chapter
+const CHAPTERS = [
+  { n: 1, name: 'The Aurora', art: 'ch1', blurb: 'Crystal mazes adrift in the void.' },
+  { n: 2, name: 'The Wilds', art: 'ch2', blurb: 'A living island floating under the stars. Demo: first level.' }
+];
+const chapterOf = i => (LEVEL_INFO[i] && LEVEL_INFO[i].chapter) || 1;
+const chapterLevels = n => LEVEL_INFO.map((l, i) => i).filter(i => chapterOf(i) === n);
+const levelNum = i => chapterLevels(chapterOf(i)).indexOf(i) + 1;
+const isUnlocked = i => i < PROG.unlocked || chapterLevels(chapterOf(i))[0] === i || PROG.best[i - 1] != null;
 
 /* ============================== STATE / DOM ============================== */
 let mode = 'splash';            // splash | intro | menu | panel | closing | modal | quit
@@ -1354,7 +1379,7 @@ function showChapters() {
   buildRows(openCard.d); swapIn();
 }
 function enterChapter() {
-  playView = 'levels'; SFX.open(); vibrate(18); $('#crumb').textContent = 'Play › Chapter 1';
+  playView = 'levels'; SFX.open(); vibrate(18); $('#crumb').textContent = `Play › Chapter ${CHAPTERS[chSel].n}`;
   buildRows(openCard.d); swapIn();
 }
 function swapIn() { pContent.scrollTop = 0; pContent.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.2,.9,.25,1)' }); setHints('panel', true); }
@@ -1480,54 +1505,56 @@ const ROW = {
     return { el, press, adjust: () => SFX.bump() };
   },
   chapters() {
-    const done = PROG.best.filter(x => x != null).length, total = LEVEL_INFO.length;
+    const card = ch => {
+      const ids = chapterLevels(ch.n), total = ids.length, done = ids.filter(i => PROG.best[i] != null).length;
+      const rel = ids.reduce((n, i) => n + ((PROG.relics[i] || []).filter(Boolean).length), 0), relT = ids.reduce((n, i) => n + (LEVEL_INFO[i].relics || []).length, 0);
+      const isDemo = ids.some(i => LEVEL_INFO[i].demo);
+      return `<div class="ch-card ${ch.art}"><div class="ch-art"><i></i><i></i><i></i></div>${isDemo ? '<span class="ch-badge new">DEMO</span>' : ''}<span class="ch-num">CHAPTER ${ch.n}</span><b>${ch.name}</b>
+        <small>${total} level${total > 1 ? 's' : ''} · ${done}/${total} cleared · ◆ ${rel}/${relT}</small>
+        <div class="ch-pips">${ids.map(i => `<i class="${PROG.medal[i] || (PROG.best[i] != null ? 'done' : isUnlocked(i) ? 'open' : '')}" title="${LEVEL_INFO[i].name}"></i>`).join('')}</div>
+        <div class="ch-bar"><i style="width:${done / total * 100}%"></i></div></div>`;
+    };
     const el = h(`<div class="row col"><div class="rl"><b>Select Chapter</b><small>Each chapter is its own journey through the void.</small></div>
-      <div class="ch-grid">
-        <div class="ch-card ch1"><div class="ch-art"><i></i><i></i><i></i></div><span class="ch-num">CHAPTER 1</span><b>The Aurora</b>
-          <small>${total} levels · ${done}/${total} cleared · ◆ ${relicFound()}/${relicTotal()}</small>
-          <div class="ch-pips">${LEVEL_INFO.map((l, i) => `<i class="${PROG.medal[i] || (PROG.best[i] != null ? 'done' : i < PROG.unlocked ? 'open' : '')}" title="${l.name}"></i>`).join('')}</div>
-          <div class="ch-bar"><i style="width:${done / total * 100}%"></i></div></div>
-        <div class="ch-card soon"><div class="ch-art"><i></i><i></i><i></i></div><span class="ch-badge">COMING IN 1.7</span><span class="ch-num">CHAPTER 2</span><b>???</b>
-          <small>A new journey is on its way.</small><div class="ch-lock">🔒</div></div>
-      </div></div>`);
+      <div class="ch-grid">${CHAPTERS.map(card).join('')}</div></div>`);
     const tiles = $$('.ch-card', el);
     const refresh = () => tiles.forEach((t, i) => t.classList.toggle('sel', i === chSel));
-    const soon = () => { SFX.bump(); toast('Chapter 2 is coming soon'); };
-    const pick = i => { if (i < 0 || i > 1) { SFX.bump(); return; } if (i !== chSel) { chSel = i; refresh(); SFX.change(i ? 1 : -1); } };
+    const pick = i => { if (i < 0 || i >= CHAPTERS.length) { SFX.bump(); return; } if (i !== chSel) { chSel = i; refresh(); SFX.change(i ? 1 : -1); } };
     tiles.forEach((t, i) => {
-      t.addEventListener('click', e => { e.stopPropagation(); pick(i); if (i === 0) enterChapter(); else soon(); });
+      t.addEventListener('click', e => { e.stopPropagation(); pick(i); enterChapter(); });
       t.addEventListener('pointerenter', () => SFX.hover(i + 2, true));
     });
     refresh();
-    return { el, refresh, adjust: d => pick(chSel + d), press: () => chSel === 0 ? enterChapter() : soon() };
+    return { el, refresh, adjust: d => pick(chSel + d), press: () => enterChapter() };
   },
   levels() {
-    S.level = clamp(S.level || 0, 0, PROG.unlocked - 1);
+    const ids = chapterLevels(CHAPTERS[chSel].n);
+    if (!ids.includes(S.level) || !isUnlocked(S.level)) S.level = [...ids].reverse().find(isUnlocked) ?? ids[0];
     const diffBars = i => Array.from({ length: LEVEL_INFO.length }, (_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('');
-    const el = h(`<div class="row col"><div class="rl"><b>Chapter 1 · Select Level</b><small>Collect the 3 star shards, wake the portal. Relics are hidden off the main path.</small></div>
-      <div class="lv-grid">${LEVEL_INFO.map((l, i) => {
-        const locked = i >= PROG.unlocked, rel = (PROG.relics[i] || []).filter(Boolean).length, md = PROG.medal[i];
+    const el = h(`<div class="row col"><div class="rl"><b>Chapter ${CHAPTERS[chSel].n} · Select Level</b><small>Collect the 3 star shards, wake the portal. Relics are hidden off the main path.</small></div>
+      <div class="lv-grid">${ids.map(i => {
+        const l = LEVEL_INFO[i], locked = !isUnlocked(i), rel = (PROG.relics[i] || []).filter(Boolean).length, md = PROG.medal[i];
         return `<div class="lvl-card${locked ? ' locked' : ''}"><canvas></canvas>
-          <div class="lvl-meta"><div class="lvl-top"><span class="lvl-num">${String(i + 1).padStart(2, '0')}</span><span class="lvl-name">${l.name}</span><span class="lvl-diff">${diffBars(i)}</span></div>
+          <div class="lvl-meta"><div class="lvl-top"><span class="lvl-num">${String(levelNum(i)).padStart(2, '0')}</span><span class="lvl-name">${l.name}</span><span class="lvl-diff">${diffBars(i)}</span></div>
           <div class="lvl-stats">${md ? `<span class="mdot ${md}"></span>` : ''}<span>${PROG.best[i] != null ? 'Best ' + fmtT(PROG.best[i]) : 'Par ' + fmtT(l.par)}</span><span class="gem">◆ ${rel}/${(l.relics || []).length}</span></div></div>
-          ${locked ? `<div class="lvl-lock"><b>🔒</b>Clear level ${i} to unlock</div>` : ''}</div>`;
+          ${locked ? `<div class="lvl-lock"><b>🔒</b>Clear level ${levelNum(i) - 1} to unlock</div>` : ''}</div>`;
       }).join('')}</div></div>`);
     const tiles = $$('.lvl-card', el);
-    tiles.forEach((t, i) => drawLevelMap($('canvas', t), i));
-    const refresh = () => tiles.forEach((t, i) => t.classList.toggle('sel', i === S.level));
+    tiles.forEach((t, k) => drawLevelMap($('canvas', t), ids[k]));
+    const refresh = () => tiles.forEach((t, k) => t.classList.toggle('sel', ids[k] === S.level));
     const pick = i => {
-      if (i >= PROG.unlocked) { SFX.bump(); toast('Clear the previous level to unlock it'); return; }
+      if (!isUnlocked(i)) { SFX.bump(); toast('Clear the previous level to unlock it'); return; }
       if (i === S.level) return;
       const dir = Math.sign(i - S.level) || 1;
       S.level = i; save(); refresh(); SFX.change(dir); vibrate(10);
       if (readyEls) readyEls.update(i);
     };
-    tiles.forEach((t, i) => {
-      t.addEventListener('click', e => { e.stopPropagation(); if (i === S.level && i < PROG.unlocked) beginLevel(i); else pick(i); });
-      t.addEventListener('pointerenter', () => SFX.hover(i + 2, true));
+    tiles.forEach((t, k) => {
+      const i = ids[k];
+      t.addEventListener('click', e => { e.stopPropagation(); if (i === S.level && isUnlocked(i)) beginLevel(i); else pick(i); });
+      t.addEventListener('pointerenter', () => SFX.hover(k + 2, true));
     });
     refresh();
-    return { el, refresh, adjust: d => { const n = S.level + d; if (n < 0 || n >= LEVEL_INFO.length) SFX.bump(); else pick(n); }, press: () => beginLevel(S.level) };
+    return { el, refresh, adjust: d => { const k = ids.indexOf(S.level) + d; if (k < 0 || k >= ids.length) SFX.bump(); else pick(ids[k]); }, press: () => beginLevel(S.level) };
   },
   collection() {
     const total = relicTotal(), found = relicFound();
@@ -1540,7 +1567,7 @@ const ROW = {
       <div class="relic-grid">${LEVEL_INFO.map((l, i) => (l.relics || []).map((name, j) => {
         const got = PROG.relics[i] && PROG.relics[i][j];
         const c = `rgb(${(l.palette.aur || [.3, 1, .7]).map(v => v * 255 | 0).join(',')})`;
-        return `<div class="relic-card${got ? ' found' : ''}" style="--c:${c};--k:${k++}"><div class="ricon"><img src="relics/relic_${l.relicIds ? l.relicIds[j] : i * 2 + j}.png" alt=""></div><b>${got ? name : '???'}</b><small>Level ${i + 1} · ${l.name}</small></div>`;
+        return `<div class="relic-card${got ? ' found' : ''}" style="--c:${c};--k:${k++}"><div class="ricon"><img src="relics/relic_${l.relicIds ? l.relicIds[j] : i * 2 + j}.png" alt=""></div><b>${got ? name : '???'}</b><small>${chapterOf(i) > 1 ? `Ch ${chapterOf(i)} · ` : ''}Level ${levelNum(i)} · ${l.name}</small></div>`;
       }).join('')).join('')}</div></div>`);
     return { el, press: () => SFX.bump(), adjust: () => SFX.bump() };
   },
@@ -1549,12 +1576,12 @@ const ROW = {
       <button class="ready"><span class="rt">START</span></button></div>`);
     const update = i => {
       const l = LEVEL_INFO[i], md = PROG.medal[i], rel = (PROG.relics[i] || []).filter(Boolean).length;
-      $('.rd-num', el).textContent = `LEVEL ${String(i + 1).padStart(2, '0')}`;
+      $('.rd-num', el).textContent = `CHAPTER ${chapterOf(i)} · LEVEL ${String(levelNum(i)).padStart(2, '0')}`;
       $('.rd-name', el).textContent = l.name; $('.rd-sub', el).textContent = l.sub || '';
       $('.rd-stats', el).innerHTML = `<span><small>Par</small>${fmtT(l.par)}</span><span><small>Best</small>${PROG.best[i] != null ? fmtT(PROG.best[i]) : '—'}</span>`
         + `<span><small>Medal</small>${md ? `<i class="mdot ${md}"></i>${md[0].toUpperCase() + md.slice(1)}` : '—'}</span><span><small>Relics</small><em>◆ ${rel}/${(l.relics || []).length}</em></span>`;
-      $('.rt', el).textContent = `START LEVEL ${i + 1}`;
-      el.querySelector('.rdetail').animate([{ opacity: .3, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.9,.25,1)' });
+      $('.rt', el).textContent = `START LEVEL ${levelNum(i)}`;
+      if (el.isConnected) el.querySelector('.rdetail').animate([{ opacity: .3, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.9,.25,1)' });
     };
     update(S.level);
     readyEls = { btn: $('.ready', el), rt: $('.rt', el), update };
@@ -1562,7 +1589,7 @@ const ROW = {
     return { el, press: () => beginLevel(S.level), adjust: () => SFX.bump() };
   },
   resume() {
-    const el = h(`<div class="row col ready-row"><button class="ready"><span class="rt">RESUME</span></button><div class="rstatus">Level ${(G3 ? G3.level : 0) + 1} · ${LEVEL_INFO[G3 ? G3.level : 0].name}</div></div>`);
+    const el = h(`<div class="row col ready-row"><button class="ready"><span class="rt">RESUME</span></button><div class="rstatus">Level ${levelNum(G3 ? G3.level : 0)} · ${LEVEL_INFO[G3 ? G3.level : 0].name}</div></div>`);
     $('.ready', el).addEventListener('click', e => { e.stopPropagation(); resumeGame(); });
     return { el, press: resumeGame, adjust: () => SFX.bump() };
   },
@@ -1614,7 +1641,7 @@ function ensureGame() {
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
 async function beginLevel(i) {
-  if (mode !== 'panel' || i >= PROG.unlocked) return;
+  if (mode !== 'panel' || !isUnlocked(i)) return;
   mode = 'starting';
   SFX.ready(); vibrate(30);
   $('#blackout').classList.add('on');
