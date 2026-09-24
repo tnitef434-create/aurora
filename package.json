@@ -1,19 +1,67 @@
 {
   "name": "aurora",
   "productName": "Aurora",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Aurora — a space maze game",
   "main": "main.js",
   "scripts": {
     "start": "npm run bundle && electron .",
     "bundle": "node tools/check-levels.mjs && esbuild src/game.js --bundle --format=iife --minify --loader:.glb=binary --outfile=game.bundle.js",
     "models": "\"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe\" --background --factory-startup --python blender/build_models.py -- models && \"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe\" --background --factory-startup --python blender/build_player.py -- models",
-    "build": "npm run bundle && electron-packager . Aurora --platform=win32 --arch=x64 --icon=icon.ico --out=dist --overwrite --asar --ignore=\"^/(dist|src|models|blender|tools)(/|$)\""
+    "build": "npm run bundle && electron-builder --win --x64 --publish never"
   },
   "devDependencies": {
     "@electron/packager": "^20.3.0",
     "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
     "esbuild": "^0.28.2",
     "three": "^0.186.0"
+  },
+  "author": "Aurora",
+  "build": {
+    "appId": "com.aurora.game",
+    "productName": "Aurora",
+    "executableName": "Aurora",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "game.bundle.js",
+      "icon.ico",
+      "icon.png",
+      "relics/**",
+      "package.json"
+    ],
+    "win": {
+      "icon": "icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Aurora",
+      "artifactName": "Aurora-Setup.exe"
+    },
+    "portable": {
+      "artifactName": "Aurora.exe"
+    }
   }
 }

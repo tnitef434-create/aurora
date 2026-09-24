@@ -692,7 +692,7 @@ const h = html => { const t = document.createElement('template'); t.innerHTML = 
 
 /* ============================== SETTINGS ============================== */
 const DEFAULTS = {
-  master: 80, music: 45, sfx: 90, hoverSfx: true,
+  master: 80, music: 45, sfx: 90, hoverSfx: true, uiSound: 'Clicks',
   language: 'English', region: 'Auto', tooltips: true, sprint: false, shake: 50, showFps: false, autoPick: true,
   window: window.game ? 'Fullscreen' : 'Windowed', res: '1920 × 1080', brightness: 100, uiScale: 100, fpsCap: '144', motionBlur: false, reduceMotion: false,
   sensX: 6.5, sensY: 6.5, invert: false, vibration: true, deadzone: 12, mode: 0,
@@ -773,7 +773,36 @@ const A = {
 
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
 let lastHover = 0, lastTick = 0;
-const SFX = {
+// UI sounds come in two styles. 'Clicks' (default) are short, crisp mechanical ticks;
+// 'Chimes' are the original pentatonic notes (CHIME below).
+const clicky = () => S.uiSound !== 'Chimes';
+function click(pitch = 1, vol = 1, body = 1) {
+  A.noise({ dur: .028, from: 5200 * pitch, to: 2600 * pitch, vol: .11 * vol, send: .02, q: 2.6, peak: .04 });
+  A.tone({ f: 2100 * pitch, to: 1100 * pitch, type: 'triangle', dur: .018, vol: .05 * vol, a: .001, send: 0 });
+  if (body) A.tone({ f: 170 * pitch, to: 95, dur: .035, vol: .07 * vol * body, a: .001, send: 0 });
+}
+const CLICK = {
+  hover(i = 0, soft = false) {
+    const now = performance.now(); if (now - lastHover < 28) return; lastHover = now;
+    if (!S.hoverSfx) return;
+    click(soft ? 1.1 + (i % 3) * .03 : 1 + (i % 4) * .04, soft ? .6 : .85, soft ? .4 : .8); },
+  press() { click(.8, 1.1, 1.3); },
+  tick(p) {
+    const now = performance.now(); if (now - lastTick < 22) return; lastTick = now;
+    click(.9 + p * .004, .55, .3);
+  },
+  bump() { click(.55, .9, 1.4); },
+  open() { A.noise({ dur: .22, from: 700, to: 3800, vol: .05, send: .15 }); click(1, 1, 1.2); click(1.25, .7, .5, 0); setTimeout(() => click(1.35, .6, .3), 70); },
+  close() { A.noise({ dur: .2, from: 3800, to: 600, vol: .045, send: .12 }); click(.9, 1, 1.2); setTimeout(() => click(.75, .6, .6), 60); },
+  toggle(on) { click(on ? 1.2 : .85, 1, .9); setTimeout(() => click(on ? 1.45 : .7, .6, .4), 45); },
+  change(dir) { click(dir > 0 ? 1.15 : .95, .9, .6); },
+  reset() { [1.3, 1.15, 1, .85].forEach((p, i) => setTimeout(() => click(p, .7, .5), i * 55)); },
+  modal() { click(1.1, .9, .8); setTimeout(() => click(1.3, .6, .3), 60); },
+  notify() { click(1.4, .7, .3); setTimeout(() => click(1.6, .6, .2), 70); },
+  cancel() { click(.9, .9, .9); setTimeout(() => click(.7, .6, .6), 55); },
+  tab() { click(1.2, .9, .6); }
+};
+const CHIME = {
   hover(i = 0, soft = false) {
     const now = performance.now(); if (now - lastHover < 28) return; lastHover = now;
     if (!S.hoverSfx) return;
@@ -841,6 +870,8 @@ const SFX = {
   },
   tab() { A.tone({ f: 659.25, to: 880, type: 'triangle', dur: .08, vol: .07, send: .15 }); }
 };
+const SFX = new Proxy(CHIME, { get: (o, k) => (clicky() && CLICK[k]) || o[k] });
+
 
 /* ambient generative pad */
 const Music = {
@@ -934,7 +965,8 @@ const CARDS = [
     { type: 'slider', key: 'music', label: 'Music Volume', desc: 'Ambient soundtrack, unique per level.', min: 0, max: 100, step: 1, kstep: 5, unit: '%' },
     { type: 'slider', key: 'sfx', label: 'Sound Effects', min: 0, max: 100, step: 1, kstep: 5, unit: '%' },
     { type: 'header', label: 'Interface' },
-    { type: 'toggle', key: 'hoverSfx', label: 'Hover Sounds', desc: 'Play a note when highlighting items.' }
+    { type: 'choice', key: 'uiSound', label: 'Menu Sound Style', desc: 'Clicks: crisp, satisfying ticks (recommended) · Chimes: soft musical notes.', options: ['Clicks', 'Chimes'] },
+    { type: 'toggle', key: 'hoverSfx', label: 'Hover Sounds', desc: 'Play a sound when highlighting items.' }
   ]},
   { id: 'display', title: 'Display', sub: 'Adjust graphics and visuals.', icon: 'display', rows: [
     { type: 'header', label: 'Screen' },
